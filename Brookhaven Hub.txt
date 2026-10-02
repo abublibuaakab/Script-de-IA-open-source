@@ -3,19 +3,65 @@ local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 
-local Window = Rayfield:CreateWindow({
-	Name = "Brookhaven Hub",
-	LoadingTitle = "Brookhaven Hub",
-	LoadingSubtitle = "troll & diversao",
-	ConfigurationSaving = { Enabled = false },
-	KeySystem = false,
+local Theme = {
+	MainColor = "191919",
+	FontFace = "SourceSans",
+	FontColor = "ffffff",
+	OutlineColor = "282828",
+	BackgroundColor = "0f0f0f",
+	BackgroundImage = "",
+	AccentColor = "ff2100",
+}
+
+Library.Scheme.BackgroundColor = Color3.fromHex(Theme.BackgroundColor)
+Library.Scheme.MainColor = Color3.fromHex(Theme.MainColor)
+Library.Scheme.AccentColor = Color3.fromHex(Theme.AccentColor)
+Library.Scheme.OutlineColor = Color3.fromHex(Theme.OutlineColor)
+Library.Scheme.FontColor = Color3.fromHex(Theme.FontColor)
+Library:SetFont(Font.fromEnum(Enum.Font.SourceSans))
+
+local Window = Library:CreateWindow({
+	Title = "Brookhaven Hub",
+	Footer = "v1.0",
+	Icon = nil,
+	NotifySide = "Right",
+	ShowCustomCursor = true,
+	Center = true,
+	AutoShow = true,
+	ToggleKeybind = Enum.KeyCode.RightShift,
 })
+
+Library:SetFont(Font.fromEnum(Enum.Font.SourceSans))
+Library:UpdateColorsUsingRegistry()
 
 local G = getgenv()
 G.BHHub = G.BHHub or { Speed = 16, Noclip = false, Fly = false, FlySpeed = 50, InfJump = false, ESP = false, Fling = false, FlingAll = false, Spam = false, SpamText = "oi", AntiAFK = false, CarFly = false, Turbo = false, TurboSpeed = 200, CarFling = false, MusicID = "", BoatFling = false, BallFling = false, SofaName = "" }
 local S = G.BHHub
+
+local function char()
+	local c = LocalPlayer.Character
+	if c and c.Parent then
+		return c
+	end
+	return nil
+end
+
+local function hrp()
+	local c = char()
+	return c and c:FindFirstChild("HumanoidRootPart") or nil
+end
+
+local function hum()
+	local c = char()
+	return c and c:FindFirstChildOfClass("Humanoid") or nil
+end
+
+local function notify(t, c)
+	Library:Notify({ Title = t, Description = c, Time = 4 })
+end
 
 local function findModels(keys, maxN)
 	local found = {}
@@ -28,21 +74,29 @@ local function findModels(keys, maxN)
 					break
 				end
 			end
-			if #found >= (maxN or 5) then break end
+			if #found >= (maxN or 5) then
+				break
+			end
 		end
 	end
 	return found
 end
 
 local function modelPos(m)
-	local ok, cf = pcall(function() return m:GetPivot() end)
-	if ok then return cf.Position end
+	local ok, cf = pcall(function()
+		return m:GetPivot()
+	end)
+	if ok then
+		return cf.Position
+	end
 	return nil
 end
 
 local function spinModel(m)
 	local root = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart", true)
-	if not root then return end
+	if not root then
+		return
+	end
 	local av = root:FindFirstChild("BHSpin")
 	if not av then
 		av = Instance.new("BodyAngularVelocity")
@@ -63,26 +117,6 @@ local RE = game:GetService("ReplicatedStorage").RE
 local Maxy = RE:WaitForChild("1Max1y")
 local RPHouse = RE:WaitForChild("1RPHous1eEven1t")
 
-local function char()
-	local c = LocalPlayer.Character
-	if c and c.Parent then return c end
-	return nil
-end
-
-local function hrp()
-	local c = char()
-	return c and c:FindFirstChild("HumanoidRootPart") or nil
-end
-
-local function hum()
-	local c = char()
-	return c and c:FindFirstChildOfClass("Humanoid") or nil
-end
-
-local function notify(t, c)
-	Rayfield:Notify({ Title = t, Content = c, Duration = 4 })
-end
-
 local function playerByName(n)
 	n = string.lower(n)
 	for _, plr in ipairs(Players:GetPlayers()) do
@@ -93,20 +127,22 @@ local function playerByName(n)
 	return nil
 end
 
--- ============ CARRO ============
-local TabC = Window:CreateTab("Carro", 0)
+local TabC = Window:AddTab("Carro", "car")
+local BoxC = TabC:AddLeftGroupbox("Carro")
 local CarName = "Limo"
 
-TabC:CreateInput({
-	Name = "Nome do carro",
-	PlaceholderText = "ve o nome na concessionaria",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) CarName = t end,
+BoxC:AddInput("CarNameInput", {
+	Text = "Nome do carro",
+	Default = "",
+	Placeholder = "ve o nome na concessionaria",
+	Callback = function(t)
+		CarName = t
+	end,
 })
 
-TabC:CreateButton({
-	Name = "SPAWNAR carro",
-	Callback = function()
+BoxC:AddButton({
+	Text = "SPAWNAR carro",
+	Func = function()
 		pcall(function()
 			Maxy:FireServer("RequestDealerVehicle", CarName)
 			notify("Carro", "Pedido: " .. CarName .. " (espera 9s)")
@@ -114,24 +150,31 @@ TabC:CreateButton({
 	end,
 })
 
-TabC:CreateToggle({
-	Name = "VOAR com carro (dirigindo)",
-	CurrentValue = false,
-	Callback = function(v) S.CarFly = v end,
+BoxC:AddToggle("CarFlyToggle", {
+	Text = "VOAR com carro dirigindo",
+	Default = false,
+	Callback = function(v)
+		S.CarFly = v
+	end,
 })
 
-TabC:CreateSlider({
-	Name = "Velocidade MAX do carro",
-	Range = { 55, 300 },
-	Increment = 5,
-	CurrentValue = 200,
-	Callback = function(v) S.TurboSpeed = v end,
+BoxC:AddSlider("CarSpeedSlider", {
+	Text = "Velocidade MAX do carro",
+	Default = 200,
+	Min = 55,
+	Max = 300,
+	Rounding = 0,
+	Callback = function(v)
+		S.TurboSpeed = v
+	end,
 })
 
-TabC:CreateToggle({
-	Name = "TURBO carro (MaxSpeed)",
-	CurrentValue = false,
-	Callback = function(v) S.Turbo = v end,
+BoxC:AddToggle("CarTurboToggle", {
+	Text = "TURBO carro MaxSpeed",
+	Default = false,
+	Callback = function(v)
+		S.Turbo = v
+	end,
 })
 
 task.spawn(function()
@@ -151,10 +194,12 @@ task.spawn(function()
 	end
 end)
 
-TabC:CreateToggle({
-	Name = "FLING com veiculo (dirigindo)",
-	CurrentValue = false,
-	Callback = function(v) S.CarFling = v end,
+BoxC:AddToggle("CarFlingToggle", {
+	Text = "FLING com veiculo dirigindo",
+	Default = false,
+	Callback = function(v)
+		S.CarFling = v
+	end,
 })
 
 task.spawn(function()
@@ -184,16 +229,20 @@ task.spawn(function()
 				local model = seat and seat:FindFirstAncestorOfClass("Model")
 				local root = model and (model.PrimaryPart or seat)
 				local av = root and root:FindFirstChild("BHSpin")
-				if av then av:Destroy() end
+				if av then
+					av:Destroy()
+				end
 			end)
 		end
 	end
 end)
 
-TabC:CreateToggle({
-	Name = "CAR SMASH (meu carro nos players)",
-	CurrentValue = false,
-	Callback = function(v) S.CarSmash = v end,
+BoxC:AddToggle("CarSmashToggle", {
+	Text = "CAR SMASH meu carro nos players",
+	Default = false,
+	Callback = function(v)
+		S.CarSmash = v
+	end,
 })
 
 task.spawn(function()
@@ -204,9 +253,13 @@ task.spawn(function()
 				local h = hum()
 				local seat = h and h.SeatPart
 				local model = seat and seat:FindFirstAncestorOfClass("Model")
-				if not model then return end
+				if not model then
+					return
+				end
 				for _, plr in ipairs(Players:GetPlayers()) do
-					if not S.CarSmash then break end
+					if not S.CarSmash then
+						break
+					end
 					if plr ~= LocalPlayer and plr.Character then
 						local e = plr.Character:FindFirstChild("HumanoidRootPart")
 						if e then
@@ -220,9 +273,9 @@ task.spawn(function()
 	end
 end)
 
-TabC:CreateButton({
-	Name = "FREIO (anchor carro)",
-	Callback = function()
+BoxC:AddButton({
+	Text = "FREIO anchor carro",
+	Func = function()
 		pcall(function()
 			local h = hum()
 			local seat = h and h.SeatPart
@@ -236,10 +289,12 @@ TabC:CreateButton({
 	end,
 })
 
-TabC:CreateToggle({
-	Name = "RGB no carro (arco-iris)",
-	CurrentValue = false,
-	Callback = function(v) S.RGBCar = v end,
+BoxC:AddToggle("CarRGBToggle", {
+	Text = "RGB no carro arco-iris",
+	Default = false,
+	Callback = function(v)
+		S.RGBCar = v
+	end,
 })
 
 task.spawn(function()
@@ -264,16 +319,19 @@ task.spawn(function()
 end)
 
 local ToolName = "GlockBrown"
-TabC:CreateInput({
-	Name = "Pegar TOOL (nome)",
-	PlaceholderText = "GlockBrown, PropMaker...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) ToolName = t end,
+
+BoxC:AddInput("ToolNameInput", {
+	Text = "Pegar TOOL nome",
+	Default = "",
+	Placeholder = "GlockBrown, PropMaker...",
+	Callback = function(t)
+		ToolName = t
+	end,
 })
 
-TabC:CreateButton({
-	Name = "PEGAR TOOL (exp.)",
-	Callback = function()
+BoxC:AddButton({
+	Text = "PEGAR TOOL exp.",
+	Func = function()
 		pcall(function()
 			local r = RE["1Too1l"]:InvokeServer(ToolName)
 			notify("Tool", "Retorno: " .. tostring(r) .. " (pode entregar na loja)")
@@ -281,11 +339,14 @@ TabC:CreateButton({
 	end,
 })
 
-TabC:CreateButton({
-	Name = "MUSICA no carro (usa ID da aba Musica)",
-	Callback = function()
+BoxC:AddButton({
+	Text = "MUSICA no carro usa ID da aba Musica",
+	Func = function()
 		local n = tonumber(S.MusicID)
-		if not n then notify("Musica", "Digite o ID primeiro.") return end
+		if not n then
+			notify("Musica", "Digite o ID primeiro.")
+			return
+		end
 		pcall(function()
 			game:GetService("ReplicatedStorage").Remotes.ToggleVehicleMusic:FireServer(n)
 		end)
@@ -297,9 +358,9 @@ TabC:CreateButton({
 	end,
 })
 
-TabC:CreateButton({
-	Name = "TP meu carro ate mim",
-	Callback = function()
+BoxC:AddButton({
+	Text = "TP meu carro ate mim",
+	Func = function()
 		pcall(function()
 			local h = hum()
 			local seat = h and h.SeatPart
@@ -323,7 +384,9 @@ RunService.RenderStepped:Connect(function()
 			if model then
 				local dir = h.MoveDirection
 				local up = 0
-				if h.Jump then up = 1 end
+				if h.Jump then
+					up = 1
+				end
 				local cf = model:GetPivot()
 				model:PivotTo(cf + dir * 2 + Vector3.new(0, up * 2, 0))
 			end
@@ -331,25 +394,35 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
--- ============ MUSICA ============
-local TabM = Window:CreateTab("Musica", 0)
+local TabM = Window:AddTab("Musica", "music")
+local BoxM = TabM:AddLeftGroupbox("Musica")
 
-TabM:CreateInput({
-	Name = "ID da musica",
-	PlaceholderText = "ex: 1837879082",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) S.MusicID = t end,
+BoxM:AddInput("MusicIdInput", {
+	Text = "ID da musica",
+	Default = "",
+	Placeholder = "ex: 1837879082",
+	Callback = function(t)
+		S.MusicID = t
+	end,
 })
 
 local function tryMusic(id)
 	local M = game:GetService("ReplicatedStorage").Remotes.ClientMusic
 	local n = tonumber(id)
-	if not n then return "ID invalido" end
-	pcall(function() M:FireServer(n) end)
+	if not n then
+		return "ID invalido"
+	end
+	pcall(function()
+		M:FireServer(n)
+	end)
 	task.wait(0.5)
-	pcall(function() M:FireServer("Play", n) end)
+	pcall(function()
+		M:FireServer("Play", n)
+	end)
 	task.wait(0.5)
-	pcall(function() M:FireServer("rbxassetid://" .. n) end)
+	pcall(function()
+		M:FireServer("rbxassetid://" .. n)
+	end)
 	task.wait(0.5)
 	local h = hum()
 	local seat = h and h.SeatPart
@@ -361,32 +434,37 @@ local function tryMusic(id)
 	return "tentativas enviadas"
 end
 
-TabM:CreateButton({
-	Name = "TOCAR na caixa de som",
-	Callback = function()
+BoxM:AddButton({
+	Text = "TOCAR na caixa de som",
+	Func = function()
 		notify("Musica", tryMusic(S.MusicID))
 	end,
 })
 
-TabM:CreateLabel("Se nao tocar, me fala: testo outro remote.")
+BoxM:AddLabel("Se nao tocar, me fala: testo outro remote.", true)
 
--- ============ CASA ============
-local TabH = Window:CreateTab("Casa", 0)
+local TabH = Window:AddTab("Casa", "house")
+local BoxH = TabH:AddLeftGroupbox("Casa")
 local BanName = ""
+local TpName = ""
 
-TabH:CreateInput({
-	Name = "Nome do player",
-	PlaceholderText = "nome ou parte do nome",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) BanName = t end,
+BoxH:AddInput("BanNameInput", {
+	Text = "Nome do player",
+	Default = "",
+	Placeholder = "nome ou parte do nome",
+	Callback = function(t)
+		BanName = t
+	end,
 })
 
-TabH:CreateButton({
-	Name = "BANIR da minha casa (exp.)",
-	Callback = function()
+BoxH:AddButton({
+	Text = "BANIR da minha casa exp.",
+	Func = function()
 		local t = playerByName(BanName)
 		if t then
-			pcall(function() RPHouse:FireServer("BanPlayer", t.Name) end)
+			pcall(function()
+				RPHouse:FireServer("BanPlayer", t.Name)
+			end)
 			notify("Casa", "Tentando banir " .. t.Name)
 		else
 			notify("Casa", "Player nao achado.")
@@ -394,12 +472,14 @@ TabH:CreateButton({
 	end,
 })
 
-TabH:CreateButton({
-	Name = "BANIR TODOS da casa",
-	Callback = function()
+BoxH:AddButton({
+	Text = "BANIR TODOS da casa",
+	Func = function()
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if plr ~= LocalPlayer then
-				pcall(function() RPHouse:FireServer("BanPlayer", plr.Name) end)
+				pcall(function()
+					RPHouse:FireServer("BanPlayer", plr.Name)
+				end)
 				task.wait(0.2)
 			end
 		end
@@ -407,12 +487,14 @@ TabH:CreateButton({
 	end,
 })
 
-TabH:CreateButton({
-	Name = "DESBANIR (exp.)",
-	Callback = function()
+BoxH:AddButton({
+	Text = "DESBANIR exp.",
+	Func = function()
 		local t = playerByName(BanName)
 		if t then
-			pcall(function() RPHouse:FireServer("UnbanPlayer", t.Name) end)
+			pcall(function()
+				RPHouse:FireServer("UnbanPlayer", t.Name)
+			end)
 			notify("Casa", "Tentando desbanir " .. t.Name)
 		else
 			notify("Casa", "Player nao achado.")
@@ -420,9 +502,9 @@ TabH:CreateButton({
 	end,
 })
 
-TabH:CreateButton({
-	Name = "TRANCAR/DESTRANCAR casa",
-	Callback = function()
+BoxH:AddButton({
+	Text = "TRANCAR/DESTRANCAR casa",
+	Func = function()
 		pcall(function()
 			RE["1Player1sHous1e"]:FireServer("LockDoors")
 			notify("Casa", "Portas alternadas.")
@@ -430,26 +512,34 @@ TabH:CreateButton({
 	end,
 })
 
-TabH:CreateButton({
-	Name = "TP MINHA CASA",
-	Callback = function()
+BoxH:AddButton({
+	Text = "TP MINHA CASA",
+	Func = function()
 		local me = hrp()
-		if not me then return end
+		if not me then
+			return
+		end
 		local lots = workspace:FindFirstChild("001_Lots")
 		local target = lots and lots:FindFirstChild(LocalPlayer.Name .. "House")
 		if target then
-			local ok, cf = pcall(function() return target:GetPivot() end)
-			if ok then me.CFrame = cf * CFrame.new(0, 5, 0) end
+			local ok, cf = pcall(function()
+				return target:GetPivot()
+			end)
+			if ok then
+				me.CFrame = cf * CFrame.new(0, 5, 0)
+			end
 		else
 			notify("Casa", "Voce nao tem casa.")
 		end
 	end,
 })
 
-TabH:CreateToggle({
-	Name = "AUTO LOOT cofre (casas)",
-	CurrentValue = false,
-	Callback = function(v) S.LootSafe = v end,
+BoxH:AddToggle("LootSafeToggle", {
+	Text = "AUTO LOOT cofre casas",
+	Default = false,
+	Callback = function(v)
+		S.LootSafe = v
+	end,
 })
 
 task.spawn(function()
@@ -466,20 +556,32 @@ task.spawn(function()
 					end
 				end
 				local me = hrp()
-				if not me then return end
+				if not me then
+					return
+				end
 				for _, d in ipairs(G.BHHub.safeCache) do
-					if not S.LootSafe then break end
+					if not S.LootSafe then
+						break
+					end
 					if d and d.Parent then
 						me.CFrame = d.CFrame * CFrame.new(0, 0, 3)
 						task.wait(0.5)
 						for _, k in ipairs(d.Parent:GetDescendants()) do
-							if k:IsA("ClickDetector") then pcall(function() fireclickdetector(k) end) end
+							if k:IsA("ClickDetector") then
+								pcall(function()
+									fireclickdetector(k)
+								end)
+							end
 						end
 						task.wait(1)
 						local m = d:FindFirstAncestorOfClass("Model")
 						if m then
-							local ok, cf = pcall(function() return m:GetPivot() end)
-							if ok then me.CFrame = cf end
+							local ok, cf = pcall(function()
+								return m:GetPivot()
+							end)
+							if ok then
+								me.CFrame = cf
+							end
 							task.wait(1)
 						end
 					end
@@ -491,14 +593,45 @@ task.spawn(function()
 	end
 end)
 
-TabH:CreateLabel("Cor da casa (precisa ter casa):")
+BoxH:AddLabel("Cor da casa (precisa ter casa):", true)
 local CR, CG, CB = 255, 0, 0
-TabH:CreateSlider({ Name = "R", Range = { 0, 255 }, Increment = 1, CurrentValue = 255, Callback = function(v) CR = v end })
-TabH:CreateSlider({ Name = "G", Range = { 0, 255 }, Increment = 1, CurrentValue = 0, Callback = function(v) CG = v end })
-TabH:CreateSlider({ Name = "B", Range = { 0, 255 }, Increment = 1, CurrentValue = 0, Callback = function(v) CB = v end })
-TabH:CreateButton({
-	Name = "PINTAR casa",
-	Callback = function()
+
+BoxH:AddSlider("HouseRSlider", {
+	Text = "R",
+	Default = 255,
+	Min = 0,
+	Max = 255,
+	Rounding = 0,
+	Callback = function(v)
+		CR = v
+	end,
+})
+
+BoxH:AddSlider("HouseGSlider", {
+	Text = "G",
+	Default = 0,
+	Min = 0,
+	Max = 255,
+	Rounding = 0,
+	Callback = function(v)
+		CG = v
+	end,
+})
+
+BoxH:AddSlider("HouseBSlider", {
+	Text = "B",
+	Default = 0,
+	Min = 0,
+	Max = 255,
+	Rounding = 0,
+	Callback = function(v)
+		CB = v
+	end,
+})
+
+BoxH:AddButton({
+	Text = "PINTAR casa",
+	Func = function()
 		pcall(function()
 			RE["1Player1sHous1e"]:FireServer("ColorPickHouse", Color3.fromRGB(CR, CG, CB))
 			notify("Casa", "Cor enviada.")
@@ -506,16 +639,19 @@ TabH:CreateButton({
 	end,
 })
 
--- ============ TROLL ============
-local TabT = Window:CreateTab("Troll", 0)
+local TabT = Window:AddTab("Troll", "skull")
+local BoxT = TabT:AddLeftGroupbox("Troll")
 
-TabT:CreateToggle({
-	Name = "FLING (gira e joga longe)",
-	CurrentValue = false,
-	Callback = function(v) S.Fling = v end,
+BoxT:AddToggle("FlingToggle", {
+	Text = "FLING gira e joga longe",
+	Default = false,
+	Callback = function(v)
+		S.Fling = v
+	end,
 })
 
 local flingAV = nil
+
 task.spawn(function()
 	while true do
 		task.wait(0.5)
@@ -529,17 +665,21 @@ task.spawn(function()
 			end
 		else
 			if flingAV then
-				pcall(function() flingAV:Destroy() end)
+				pcall(function()
+					flingAV:Destroy()
+				end)
 				flingAV = nil
 			end
 		end
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "FLING EM TODOS (passa um por um)",
-	CurrentValue = false,
-	Callback = function(v) S.FlingAll = v end,
+BoxT:AddToggle("FlingAllToggle", {
+	Text = "FLING EM TODOS passa um por um",
+	Default = false,
+	Callback = function(v)
+		S.FlingAll = v
+	end,
 })
 
 task.spawn(function()
@@ -547,7 +687,9 @@ task.spawn(function()
 		task.wait(0.5)
 		if S.FlingAll then
 			for _, plr in ipairs(Players:GetPlayers()) do
-				if not S.FlingAll then break end
+				if not S.FlingAll then
+					break
+				end
 				if plr ~= LocalPlayer and plr.Character then
 					local e = plr.Character:FindFirstChild("HumanoidRootPart")
 					local me = hrp()
@@ -563,17 +705,21 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateInput({
-	Name = "Texto do spam",
-	PlaceholderText = "mensagem...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) S.SpamText = t end,
+BoxT:AddInput("SpamTextInput", {
+	Text = "Texto do spam",
+	Default = "",
+	Placeholder = "mensagem...",
+	Callback = function(t)
+		S.SpamText = t
+	end,
 })
 
-TabT:CreateToggle({
-	Name = "SPAM no chat",
-	CurrentValue = false,
-	Callback = function(v) S.Spam = v end,
+BoxT:AddToggle("SpamToggle", {
+	Text = "SPAM no chat",
+	Default = false,
+	Callback = function(v)
+		S.Spam = v
+	end,
 })
 
 task.spawn(function()
@@ -587,10 +733,12 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "FLING BARCO (persegue e gira)",
-	CurrentValue = false,
-	Callback = function(v) S.BoatFling = v end,
+BoxT:AddToggle("BoatFlingToggle", {
+	Text = "FLING BARCO persegue e gira",
+	Default = false,
+	Callback = function(v)
+		S.BoatFling = v
+	end,
 })
 
 task.spawn(function()
@@ -599,10 +747,14 @@ task.spawn(function()
 		if S.BoatFling then
 			pcall(function()
 				local v = myVehicle()
-				if not v then return end
+				if not v then
+					return
+				end
 				spinModel(v)
 				for _, plr in ipairs(Players:GetPlayers()) do
-					if not S.BoatFling then break end
+					if not S.BoatFling then
+						break
+					end
 					if plr ~= LocalPlayer and plr.Character then
 						local e = plr.Character:FindFirstChild("HumanoidRootPart")
 						if e then
@@ -616,10 +768,12 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "FLING BALL (bola girando)",
-	CurrentValue = false,
-	Callback = function(v) S.BallFling = v end,
+BoxT:AddToggle("BallFlingToggle", {
+	Text = "FLING BALL bola girando",
+	Default = false,
+	Callback = function(v)
+		S.BallFling = v
+	end,
 })
 
 task.spawn(function()
@@ -628,7 +782,9 @@ task.spawn(function()
 		if S.BallFling then
 			pcall(function()
 				local balls = findModels({ "ball", "soccer", "football", "basket" }, 3)
-				if #balls == 0 then return end
+				if #balls == 0 then
+					return
+				end
 				local b = balls[1]
 				spinModel(b)
 				local me = hrp()
@@ -644,7 +800,9 @@ task.spawn(function()
 						local mp = modelPos(b)
 						if ee and mp then
 							local d = (ee.Position - mp).Magnitude
-							if d < bestD then best, bestD = ee, d end
+							if d < bestD then
+								best, bestD = ee, d
+							end
 						end
 					end
 				end
@@ -656,10 +814,12 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "BRING PLAYER via sofa (loop)",
-	CurrentValue = false,
-	Callback = function(v) S.SofaBring = v end,
+BoxT:AddToggle("SofaBringToggle", {
+	Text = "BRING PLAYER via sofa loop",
+	Default = false,
+	Callback = function(v)
+		S.SofaBring = v
+	end,
 })
 
 task.spawn(function()
@@ -668,9 +828,13 @@ task.spawn(function()
 		if S.SofaBring then
 			pcall(function()
 				local me = hrp()
-				if not me then return end
+				if not me then
+					return
+				end
 				local sofas = findModels({ "sofa", "couch" }, 3)
-				if #sofas == 0 then return end
+				if #sofas == 0 then
+					return
+				end
 				local s = sofas[1]
 				local t = playerByName(S.SofaName)
 				if t and t.Character then
@@ -700,10 +864,12 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "FLING BARCO sozinho (pega e caca)",
-	CurrentValue = false,
-	Callback = function(v) S.BoatSolo = v end,
+BoxT:AddToggle("BoatSoloToggle", {
+	Text = "FLING BARCO sozinho pega e caca",
+	Default = false,
+	Callback = function(v)
+		S.BoatSolo = v
+	end,
 })
 
 task.spawn(function()
@@ -712,9 +878,13 @@ task.spawn(function()
 		if S.BoatSolo then
 			pcall(function()
 				local me = hrp()
-				if not me then return end
+				if not me then
+					return
+				end
 				local boats = findModels({ "boat", "yacht", "ship", "canoe", "jetski", "sail" }, 5)
-				if #boats == 0 then return end
+				if #boats == 0 then
+					return
+				end
 				local b = boats[1]
 				local bp = modelPos(b)
 				if bp and (bp - me.Position).Magnitude > 10 then
@@ -723,7 +893,9 @@ task.spawn(function()
 				end
 				spinModel(b)
 				for _, plr in ipairs(Players:GetPlayers()) do
-					if not S.BoatSolo then break end
+					if not S.BoatSolo then
+						break
+					end
 					if plr ~= LocalPlayer and plr.Character then
 						local e = plr.Character:FindFirstChild("HumanoidRootPart")
 						if e then
@@ -737,19 +909,24 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateInput({
-	Name = "Alvo do sofa (nome)",
-	PlaceholderText = "nome do player...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) S.SofaName = t end,
+BoxT:AddInput("SofaNameInput", {
+	Text = "Alvo do sofa nome",
+	Default = "",
+	Placeholder = "nome do player...",
+	Callback = function(t)
+		S.SofaName = t
+	end,
 })
 
-TabT:CreateButton({
-	Name = "BRING SOFA (sofa no alvo)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "BRING SOFA sofa no alvo",
+	Func = function()
 		pcall(function()
 			local sofas = findModels({ "sofa", "couch" }, 3)
-			if #sofas == 0 then notify("Sofa", "Nenhum sofa achado.") return end
+			if #sofas == 0 then
+				notify("Sofa", "Nenhum sofa achado.")
+				return
+			end
 			local s = sofas[1]
 			local t = playerByName(S.SofaName)
 			if t and t.Character then
@@ -765,9 +942,9 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "PUXAR (sofa ate mim)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "PUXAR sofa ate mim",
+	Func = function()
 		pcall(function()
 			local sofas = findModels({ "sofa", "couch" }, 3)
 			local me = hrp()
@@ -781,10 +958,12 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateToggle({
-	Name = "FARM ATM (banco, loop)",
-	CurrentValue = false,
-	Callback = function(v) S.ATMFarm = v end,
+BoxT:AddToggle("ATMFarmToggle", {
+	Text = "FARM ATM banco, loop",
+	Default = false,
+	Callback = function(v)
+		S.ATMFarm = v
+	end,
 })
 
 task.spawn(function()
@@ -793,7 +972,9 @@ task.spawn(function()
 		if S.ATMFarm then
 			pcall(function()
 				local me = hrp()
-				if not me then return end
+				if not me then
+					return
+				end
 				G.BHHub.atmIdx = (G.BHHub.atmIdx or 0) + 1
 				local spots = { Vector3.new(-16, 4, 255), Vector3.new(-16, 4, 248) }
 				local s = spots[(G.BHHub.atmIdx % #spots) + 1]
@@ -804,10 +985,12 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "AUTO ROUBAR cofre (click loop)",
-	CurrentValue = false,
-	Callback = function(v) S.RobBank = v end,
+BoxT:AddToggle("RobBankToggle", {
+	Text = "AUTO ROUBAR cofre click loop",
+	Default = false,
+	Callback = function(v)
+		S.RobBank = v
+	end,
 })
 
 task.spawn(function()
@@ -816,19 +999,25 @@ task.spawn(function()
 		if S.RobBank then
 			pcall(function()
 				local me = hrp()
-				if not me then return end
+				if not me then
+					return
+				end
 				local bank = workspace:FindFirstChild("Bank")
 				local elev = bank and bank:FindFirstChild("001_ElevatorBank")
 				local mv = elev and elev:FindFirstChild("MediumVault")
 				if mv then
 					for _, k in ipairs(mv:GetDescendants()) do
-						if not S.RobBank then break end
+						if not S.RobBank then
+							break
+						end
 						if k:IsA("ClickDetector") then
 							local part = k.Parent
 							if part and part:IsA("BasePart") then
 								me.CFrame = part.CFrame * CFrame.new(0, 0, 3)
 								task.wait(0.4)
-								pcall(function() fireclickdetector(k) end)
+								pcall(function()
+									fireclickdetector(k)
+								end)
 								task.wait(0.8)
 							end
 						end
@@ -839,10 +1028,12 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateToggle({
-	Name = "ABRIR TUDO (banco loop)",
-	CurrentValue = false,
-	Callback = function(v) S.OpenAll = v end,
+BoxT:AddToggle("OpenAllToggle", {
+	Text = "ABRIR TUDO banco loop",
+	Default = false,
+	Callback = function(v)
+		S.OpenAll = v
+	end,
 })
 
 task.spawn(function()
@@ -851,13 +1042,20 @@ task.spawn(function()
 		if S.OpenAll then
 			pcall(function()
 				local bank = workspace:FindFirstChild("Bank")
-				if not bank then return end
+				if not bank then
+					return
+				end
 				for _, k in ipairs(bank:GetDescendants()) do
-					if not S.OpenAll then break end
+					if not S.OpenAll then
+						break
+					end
 					if k:IsA("ClickDetector") or k:IsA("ProximityPrompt") then
 						pcall(function()
-							if k:IsA("ClickDetector") then fireclickdetector(k)
-							else fireproximityprompt(k, 0) end
+							if k:IsA("ClickDetector") then
+								fireclickdetector(k)
+							else
+								fireproximityprompt(k, 0)
+							end
 						end)
 						task.wait(0.3)
 					end
@@ -867,9 +1065,9 @@ task.spawn(function()
 	end
 end)
 
-TabT:CreateButton({
-	Name = "ROTINA RICO (ATM+cofre)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "ROTINA RICO ATM+cofre",
+	Func = function()
 		S.ATMFarm = true
 		S.RobBank = true
 		S.OpenAll = true
@@ -877,35 +1075,46 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP cofre MEDIO",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP cofre MEDIO",
+	Func = function()
 		local me = hrp()
 		local mv = workspace.Bank["001_ElevatorBank"]:FindFirstChild("MediumVault")
 		if me and mv then
-			local ok, cf = pcall(function() return mv:GetPivot() end)
-			if ok then me.CFrame = cf * CFrame.new(0, 3, 6) end
+			local ok, cf = pcall(function()
+				return mv:GetPivot()
+			end)
+			if ok then
+				me.CFrame = cf * CFrame.new(0, 3, 6)
+			end
 		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP cofre DIAMANTE",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP cofre DIAMANTE",
+	Func = function()
 		local me = hrp()
 		local dv = workspace.Bank:FindFirstChild("DiamondVault")
 		if me and dv then
-			local ok, cf = pcall(function() return dv:GetPivot() end)
-			if ok then me.CFrame = cf * CFrame.new(0, 3, 6) end
+			local ok, cf = pcall(function()
+				return dv:GetPivot()
+			end)
+			if ok then
+				me.CFrame = cf * CFrame.new(0, 3, 6)
+			end
 		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "VOTE KICK alguem (exp.)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "VOTE KICK alguem exp.",
+	Func = function()
 		local nm = (BanName ~= "" and BanName or TpName)
-		if nm == "" then notify("Vote", "Digite o nome primeiro.") return end
+		if nm == "" then
+			notify("Vote", "Digite o nome primeiro.")
+			return
+		end
 		local t = playerByName(nm)
 		if t then
 			pcall(function()
@@ -913,9 +1122,13 @@ TabT:CreateButton({
 			end)
 			for _, d in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
 				if d.Name == "VoteKickRemote" and d:IsA("RemoteEvent") then
-					pcall(function() d:FireServer(t) end)
+					pcall(function()
+						d:FireServer(t)
+					end)
 					task.wait(0.2)
-					pcall(function() d:FireServer(t.Name) end)
+					pcall(function()
+						d:FireServer(t.Name)
+					end)
 				end
 			end
 			notify("Vote", "Votos enviados p/ " .. t.Name)
@@ -925,41 +1138,51 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "ANUNCIO FALSO (exp.)",
-	Callback = function()
-		pcall(function() RE["1Message1s"]:FireServer(S.SpamText) end)
+BoxT:AddButton({
+	Text = "ANUNCIO FALSO exp.",
+	Func = function()
+		pcall(function()
+			RE["1Message1s"]:FireServer(S.SpamText)
+		end)
 		task.wait(0.3)
-		pcall(function() RE["1Message1s"]:FireServer("System", S.SpamText) end)
+		pcall(function()
+			RE["1Message1s"]:FireServer("System", S.SpamText)
+		end)
 		notify("Anuncio", "Tentativa enviada.")
 	end,
 })
 
-TabT:CreateButton({
-	Name = "ROLETA (TP aleatorio)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "ROLETA TP aleatorio",
+	Func = function()
 		local ps = game:GetService("Players"):GetPlayers()
 		local others = {}
 		for _, p in ipairs(ps) do
-			if p ~= LocalPlayer and p.Character then table.insert(others, p) end
+			if p ~= LocalPlayer and p.Character then
+				table.insert(others, p)
+			end
 		end
 		local me = hrp()
 		if #others > 0 and me then
 			local t = others[math.random(1, #others)]
 			local e = t.Character:FindFirstChild("HumanoidRootPart")
-			if e then me.CFrame = e.CFrame * CFrame.new(0, 0, 4) end
+			if e then
+				me.CFrame = e.CFrame * CFrame.new(0, 0, 4)
+			end
 			notify("Roleta", t.DisplayName)
 		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "SPAM REACAO (coracao)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "SPAM REACAO coracao",
+	Func = function()
 		for _, d in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
 			if d.Name == "SpectatorReactionRemote" and d:IsA("RemoteEvent") then
 				for i = 1, 5 do
-					pcall(function() d:FireServer("Heart") end)
+					pcall(function()
+						d:FireServer("Heart")
+					end)
 					task.wait(0.2)
 				end
 			end
@@ -968,18 +1191,22 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP BANCO",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP BANCO",
+	Func = function()
 		local me = hrp()
-		if me then me.CFrame = CFrame.new(-16, 5, 250) end
+		if me then
+			me.CFrame = CFrame.new(-16, 5, 250)
+		end
 	end,
 })
 
-TabT:CreateToggle({
-	Name = "RAGDOLL SPAM (loop)",
-	CurrentValue = false,
-	Callback = function(v) S.RagSpam = v end,
+BoxT:AddToggle("RagSpamToggle", {
+	Text = "RAGDOLL SPAM loop",
+	Default = false,
+	Callback = function(v)
+		S.RagSpam = v
+	end,
 })
 
 task.spawn(function()
@@ -987,14 +1214,18 @@ task.spawn(function()
 		task.wait(1)
 		if S.RagSpam then
 			local h = hum()
-			if h then pcall(function() h:ChangeState(Enum.HumanoidStateType.Ragdoll) end) end
+			if h then
+				pcall(function()
+					h:ChangeState(Enum.HumanoidStateType.Ragdoll)
+				end)
+			end
 		end
 	end
 end)
 
-TabT:CreateButton({
-	Name = "BOMBA (exp. Santa?)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "BOMBA exp. Santa?",
+	Func = function()
 		pcall(function()
 			RE["1Blo1wBomb1sServe1r"]:FireServer()
 			notify("Bomba", "Tentativa enviada.")
@@ -1002,9 +1233,9 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "Salvar posicao",
-	Callback = function()
+BoxT:AddButton({
+	Text = "Salvar posicao",
+	Func = function()
 		local me = hrp()
 		if me then
 			G.BHHub.savedPos = me.CFrame
@@ -1013,9 +1244,9 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "Voltar salvo",
-	Callback = function()
+BoxT:AddButton({
+	Text = "Voltar salvo",
+	Func = function()
 		local me = hrp()
 		if me and G.BHHub.savedPos then
 			me.CFrame = G.BHHub.savedPos
@@ -1023,49 +1254,60 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP DELEGACIA",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP DELEGACIA",
+	Func = function()
 		local me = hrp()
-		if me then me.CFrame = CFrame.new(-31, 20, 48) end
+		if me then
+			me.CFrame = CFrame.new(-31, 20, 48)
+		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP HOSPITAL",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP HOSPITAL",
+	Func = function()
 		local me = hrp()
-		if me then me.CFrame = CFrame.new(-305, 40, 77) end
+		if me then
+			me.CFrame = CFrame.new(-305, 40, 77)
+		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP ESCOLA",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP ESCOLA",
+	Func = function()
 		local me = hrp()
-		if me then me.CFrame = CFrame.new(-348, 18, 220) end
+		if me then
+			me.CFrame = CFrame.new(-348, 18, 220)
+		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "TP PRAIA",
-	Callback = function()
+BoxT:AddButton({
+	Text = "TP PRAIA",
+	Func = function()
 		local me = hrp()
-		if me then me.CFrame = CFrame.new(-22, 88, -530) end
+		if me then
+			me.CFrame = CFrame.new(-22, 88, -530)
+		end
 	end,
 })
 
 local CloneName = ""
-TabT:CreateInput({
-	Name = "Clonar avatar de",
-	PlaceholderText = "nome...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) CloneName = t end,
+
+BoxT:AddInput("CloneNameInput", {
+	Text = "Clonar avatar de",
+	Default = "",
+	Placeholder = "nome...",
+	Callback = function(t)
+		CloneName = t
+	end,
 })
 
-TabT:CreateButton({
-	Name = "VIRAR CLONE (exp.)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "VIRAR CLONE exp.",
+	Func = function()
 		local t = playerByName(CloneName)
 		local h = hum()
 		if t and h then
@@ -1080,110 +1322,137 @@ TabT:CreateButton({
 	end,
 })
 
-TabT:CreateButton({
-	Name = "Ragdoll (cair duro)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "Ragdoll cair duro",
+	Func = function()
 		local h = hum()
-		if h then h:ChangeState(Enum.HumanoidStateType.Ragdoll) end
+		if h then
+			h:ChangeState(Enum.HumanoidStateType.Ragdoll)
+		end
 	end,
 })
 
-TabT:CreateButton({
-	Name = "Respawn (morrer)",
-	Callback = function()
+BoxT:AddButton({
+	Text = "Respawn morrer",
+	Func = function()
 		local h = hum()
-		if h then h.Health = 0 end
+		if h then
+			h.Health = 0
+		end
 	end,
 })
 
--- ============ JOGADOR ============
-local TabP = Window:CreateTab("Jogador", 0)
+local TabP = Window:AddTab("Jogador", "user")
+local BoxP = TabP:AddLeftGroupbox("Jogador")
 
-TabP:CreateSlider({
-	Name = "Velocidade",
-	Range = { 16, 120 },
-	Increment = 1,
-	CurrentValue = 16,
+BoxP:AddSlider("SpeedSlider", {
+	Text = "Velocidade",
+	Default = 16,
+	Min = 16,
+	Max = 120,
+	Rounding = 0,
 	Callback = function(v)
 		S.Speed = v
 		local h = hum()
-		if h then h.WalkSpeed = v end
+		if h then
+			h.WalkSpeed = v
+		end
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "Noclip",
-	CurrentValue = false,
-	Callback = function(v) S.Noclip = v end,
+BoxP:AddToggle("NoclipToggle", {
+	Text = "Noclip",
+	Default = false,
+	Callback = function(v)
+		S.Noclip = v
+	end,
 })
 
-TabP:CreateToggle({
-	Name = "Fly",
-	CurrentValue = false,
-	Callback = function(v) S.Fly = v end,
+BoxP:AddToggle("FlyToggle", {
+	Text = "Fly",
+	Default = false,
+	Callback = function(v)
+		S.Fly = v
+	end,
 })
 
-TabP:CreateSlider({
-	Name = "Forca do pulo",
-	Range = { 50, 300 },
-	Increment = 5,
-	CurrentValue = 50,
+BoxP:AddSlider("JumpSlider", {
+	Text = "Forca do pulo",
+	Default = 50,
+	Min = 50,
+	Max = 300,
+	Rounding = 0,
 	Callback = function(v)
 		local h = hum()
-		if h then h.JumpPower = v end
+		if h then
+			h.JumpPower = v
+		end
 	end,
 })
 
-TabP:CreateSlider({
-	Name = "Gravidade (196 normal)",
-	Range = { 0, 196 },
-	Increment = 4,
-	CurrentValue = 196,
+BoxP:AddSlider("GravitySlider", {
+	Text = "Gravidade 196 normal",
+	Default = 196,
+	Min = 0,
+	Max = 196,
+	Rounding = 0,
 	Callback = function(v)
 		workspace.Gravity = v
 	end,
 })
 
-TabP:CreateButton({
-	Name = "GIGANTE (5x)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "GIGANTE 5x",
+	Func = function()
 		local h = hum()
 		if h then
 			for _, n in ipairs({ "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }) do
 				local x = h:FindFirstChild(n)
-				if not x then x = Instance.new("NumberValue") x.Name = n x.Parent = h end
+				if not x then
+					x = Instance.new("NumberValue")
+					x.Name = n
+					x.Parent = h
+				end
 				x.Value = 5
 			end
 		end
 	end,
 })
 
-TabP:CreateButton({
-	Name = "ANAO (0.5x)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "ANAO 0.5x",
+	Func = function()
 		local h = hum()
 		if h then
 			for _, n in ipairs({ "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }) do
 				local x = h:FindFirstChild(n)
-				if not x then x = Instance.new("NumberValue") x.Name = n x.Parent = h end
+				if not x then
+					x = Instance.new("NumberValue")
+					x.Name = n
+					x.Parent = h
+				end
 				x.Value = 0.5
 			end
 		end
 	end,
 })
 
-TabP:CreateButton({
-	Name = "SEM NOME (exp.)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "SEM NOME exp.",
+	Func = function()
 		local h = hum()
-		if h then h.DisplayName = "" end
+		if h then
+			h.DisplayName = ""
+		end
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "HITBOX EXPANDER",
-	CurrentValue = false,
-	Callback = function(v) S.Hitbox = v end,
+BoxP:AddToggle("HitboxToggle", {
+	Text = "HITBOX EXPANDER",
+	Default = false,
+	Callback = function(v)
+		S.Hitbox = v
+	end,
 })
 
 task.spawn(function()
@@ -1210,38 +1479,45 @@ task.spawn(function()
 end)
 
 local DanceID = ""
-TabP:CreateInput({
-	Name = "ID da danca/anim",
-	PlaceholderText = "rbxassetid...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) DanceID = t end,
+
+BoxP:AddInput("DanceIdInput", {
+	Text = "ID da danca/anim",
+	Default = "",
+	Placeholder = "rbxassetid...",
+	Callback = function(t)
+		DanceID = t
+	end,
 })
 
-TabP:CreateButton({
-	Name = "LISTAR players",
-	Callback = function()
+BoxP:AddButton({
+	Text = "LISTAR players",
+	Func = function()
 		local ns = {}
 		for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
-			if p ~= LocalPlayer then table.insert(ns, p.DisplayName) end
+			if p ~= LocalPlayer then
+				table.insert(ns, p.DisplayName)
+			end
 		end
 		notify("Players (" .. #ns .. ")", table.concat(ns, ", "):sub(1, 200))
 	end,
 })
 
-TabP:CreateButton({
-	Name = "PARAR anims",
-	Callback = function()
+BoxP:AddButton({
+	Text = "PARAR anims",
+	Func = function()
 		local h = hum()
 		local an = h and h:FindFirstChildOfClass("Animator")
 		if an then
-			for _, t in ipairs(an:GetPlayingAnimationTracks()) do t:Stop() end
+			for _, t in ipairs(an:GetPlayingAnimationTracks()) do
+				t:Stop()
+			end
 		end
 	end,
 })
 
-TabP:CreateButton({
-	Name = "DANCAR (toca anim)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "DANCAR toca anim",
+	Func = function()
 		local h = hum()
 		if h and DanceID ~= "" then
 			pcall(function()
@@ -1255,30 +1531,34 @@ TabP:CreateButton({
 	end,
 })
 
-TabP:CreateButton({
-	Name = "Zoom LONGE (camera)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "Zoom LONGE camera",
+	Func = function()
 		LocalPlayer.CameraMaxZoomDistance = 1000
 	end,
 })
 
-TabP:CreateButton({
-	Name = "SEM NEBLINA",
-	Callback = function()
+BoxP:AddButton({
+	Text = "SEM NEBLINA",
+	Func = function()
 		game:GetService("Lighting").FogEnd = 100000
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "Pulo infinito",
-	CurrentValue = false,
-	Callback = function(v) S.InfJump = v end,
+BoxP:AddToggle("InfJumpToggle", {
+	Text = "Pulo infinito",
+	Default = false,
+	Callback = function(v)
+		S.InfJump = v
+	end,
 })
 
 UIS.JumpRequest:Connect(function()
 	if S.InfJump then
 		local h = hum()
-		if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
+		if h then
+			h:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
 	end
 end)
 
@@ -1287,7 +1567,9 @@ RunService.Stepped:Connect(function()
 		local c = char()
 		if c then
 			for _, p in ipairs(c:GetDescendants()) do
-				if p:IsA("BasePart") then p.CanCollide = false end
+				if p:IsA("BasePart") then
+					p.CanCollide = false
+				end
 			end
 		end
 	end
@@ -1310,31 +1592,34 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
-local TpName = ""
-TabP:CreateInput({
-	Name = "TP ate player",
-	PlaceholderText = "nome...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) TpName = t end,
+BoxP:AddInput("TpNameInput", {
+	Text = "TP ate player",
+	Default = "",
+	Placeholder = "nome...",
+	Callback = function(t)
+		TpName = t
+	end,
 })
 
-TabP:CreateButton({
-	Name = "Teleportar",
-	Callback = function()
+BoxP:AddButton({
+	Text = "Teleportar",
+	Func = function()
 		local t = playerByName(TpName)
 		local me = hrp()
 		if t and t.Character and me then
 			local e = t.Character:FindFirstChild("HumanoidRootPart")
-			if e then me.CFrame = e.CFrame * CFrame.new(0, 0, 4) end
+			if e then
+				me.CFrame = e.CFrame * CFrame.new(0, 0, 4)
+			end
 		else
 			notify("TP", "Player nao achado.")
 		end
 	end,
 })
 
-TabP:CreateButton({
-	Name = "CABECAO (HeadScale 5)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "CABECAO HeadScale 5",
+	Func = function()
 		local c = char()
 		local h = c and c:FindFirstChildOfClass("Humanoid")
 		if h then
@@ -1352,10 +1637,12 @@ TabP:CreateButton({
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "ANTI-VOID (volta se cair)",
-	CurrentValue = false,
-	Callback = function(v) S.AntiVoid = v end,
+BoxP:AddToggle("AntiVoidToggle", {
+	Text = "ANTI-VOID volta se cair",
+	Default = false,
+	Callback = function(v)
+		S.AntiVoid = v
+	end,
 })
 
 task.spawn(function()
@@ -1374,42 +1661,50 @@ end)
 task.spawn(function()
 	task.wait(5)
 	local me = hrp()
-	if me then G.BHHub.spawnCf = me.CFrame end
+	if me then
+		G.BHHub.spawnCf = me.CFrame
+	end
 end)
 
-TabP:CreateToggle({
-	Name = "MANTER SPEED (pos-morte)",
-	CurrentValue = false,
-	Callback = function(v) S.KeepSpeed = v end,
+BoxP:AddToggle("KeepSpeedToggle", {
+	Text = "MANTER SPEED pos-morte",
+	Default = false,
+	Callback = function(v)
+		S.KeepSpeed = v
+	end,
 })
 
 LocalPlayer.CharacterAdded:Connect(function(c)
 	task.wait(1)
 	if S.KeepSpeed then
 		local h = c:WaitForChild("Humanoid", 5)
-		if h and S.Speed > 16 then h.WalkSpeed = S.Speed end
+		if h and S.Speed > 16 then
+			h.WalkSpeed = S.Speed
+		end
 	end
 	G.BHHub.spawnCf = nil
 end)
 
-TabP:CreateButton({
-	Name = "FPS BOOST",
-	Callback = function()
+BoxP:AddButton({
+	Text = "FPS BOOST",
+	Func = function()
 		pcall(function()
 			local L = game:GetService("Lighting")
 			L.GlobalShadows = false
 			L.FogEnd = 100000
 			for _, d in ipairs(game:GetDescendants()) do
-				if d:IsA("ParticleEmitter") or d:IsA("Trail") then d.Enabled = false end
+				if d:IsA("ParticleEmitter") or d:IsA("Trail") then
+					d.Enabled = false
+				end
 			end
 			notify("FPS", "Boost aplicado.")
 		end)
 	end,
 })
 
-TabP:CreateButton({
-	Name = "FULLBRIGHT",
-	Callback = function()
+BoxP:AddButton({
+	Text = "FULLBRIGHT",
+	Func = function()
 		local L = game:GetService("Lighting")
 		L.Brightness = 2
 		L.ClockTime = 14
@@ -1418,13 +1713,17 @@ TabP:CreateButton({
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "ANTI-RAGDOLL (nao cai)",
-	CurrentValue = false,
+BoxP:AddToggle("AntiRagdollToggle", {
+	Text = "ANTI-RAGDOLL nao cai",
+	Default = false,
 	Callback = function(v)
 		S.NoRag = v
 		local h = hum()
-		if h then pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, not v) end)
+		if h then
+			pcall(function()
+				h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, not v)
+			end)
+		end
 	end,
 })
 
@@ -1432,21 +1731,27 @@ LocalPlayer.CharacterAdded:Connect(function(c)
 	task.wait(1)
 	if S.NoRag then
 		local h = c:WaitForChild("Humanoid", 5)
-		if h then pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false) end) end
+		if h then
+			pcall(function()
+				h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+			end)
+		end
 	end
 end)
 
-TabP:CreateButton({
-	Name = "COPIAR JobId (chamar amigos)",
-	Callback = function()
-		pcall(function() setclipboard(game.JobId) end)
+BoxP:AddButton({
+	Text = "COPIAR JobId chamar amigos",
+	Func = function()
+		pcall(function()
+			setclipboard(game.JobId)
+		end)
 		notify("Server", game.JobId)
 	end,
 })
 
-TabP:CreateButton({
-	Name = "QUEM TA PERTO (50m)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "QUEM TA PERTO 50m",
+	Func = function()
 		local me = hrp()
 		local ns = {}
 		if me then
@@ -1463,9 +1768,9 @@ TabP:CreateButton({
 	end,
 })
 
-TabP:CreateButton({
-	Name = "MODO FOTO (some GUI)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "MODO FOTO some GUI",
+	Func = function()
 		G.BHHub.guiOff = not G.BHHub.guiOff
 		for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
 			if g:IsA("ScreenGui") and g.Name ~= "TouchGui" then
@@ -1475,26 +1780,30 @@ TabP:CreateButton({
 	end,
 })
 
-TabP:CreateButton({
-	Name = "MUTAR jogo",
-	Callback = function()
+BoxP:AddButton({
+	Text = "MUTAR jogo",
+	Func = function()
 		local s = game:GetService("SoundService")
 		s.Volume = s.Volume > 0 and 0 or 1
 	end,
 })
 
-TabP:CreateButton({
-	Name = "TP SPAWN",
-	Callback = function()
+BoxP:AddButton({
+	Text = "TP SPAWN",
+	Func = function()
 		local me = hrp()
-		if me and G.BHHub.spawnCf then me.CFrame = G.BHHub.spawnCf end
+		if me and G.BHHub.spawnCf then
+			me.CFrame = G.BHHub.spawnCf
+		end
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "SEGUIR player (grude)",
-	CurrentValue = false,
-	Callback = function(v) S.Follow = v end,
+BoxP:AddToggle("FollowToggle", {
+	Text = "SEGUIR player grude",
+	Default = false,
+	Callback = function(v)
+		S.Follow = v
+	end,
 })
 
 task.spawn(function()
@@ -1505,28 +1814,34 @@ task.spawn(function()
 			local me = hrp()
 			if t and t.Character and me then
 				local e = t.Character:FindFirstChild("HumanoidRootPart")
-				if e then me.CFrame = e.CFrame * CFrame.new(0, 0, 4) end
+				if e then
+					me.CFrame = e.CFrame * CFrame.new(0, 0, 4)
+				end
 			end
 		end
 	end
 end)
 
-TabP:CreateButton({
-	Name = "SENTAR",
-	Callback = function()
+BoxP:AddButton({
+	Text = "SENTAR",
+	Func = function()
 		local h = hum()
-		if h then h.Sit = true end
+		if h then
+			h.Sit = true
+		end
 	end,
 })
 
-TabP:CreateButton({
-	Name = "DESVIRAR carro",
-	Callback = function()
+BoxP:AddButton({
+	Text = "DESVIRAR carro",
+	Func = function()
 		local h = hum()
 		local seat = h and h.SeatPart
 		local model = seat and seat:FindFirstAncestorOfClass("Model")
 		if model then
-			local ok, cf = pcall(function() return model:GetPivot() end)
+			local ok, cf = pcall(function()
+				return model:GetPivot()
+			end)
 			if ok then
 				local _, rY, _ = cf:ToEulerAnglesYXZ()
 				model:PivotTo(CFrame.new(cf.Position) * CFrame.Angles(0, rY, 0))
@@ -1536,16 +1851,19 @@ TabP:CreateButton({
 })
 
 local BHName = ""
-TabP:CreateInput({
-	Name = "Nome falso (display)",
-	PlaceholderText = "nome...",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(t) BHName = t end,
+
+BoxP:AddInput("FakeNameInput", {
+	Text = "Nome falso display",
+	Default = "",
+	Placeholder = "nome...",
+	Callback = function(t)
+		BHName = t
+	end,
 })
 
-TabP:CreateButton({
-	Name = "TROCAR NOME (exp.)",
-	Callback = function()
+BoxP:AddButton({
+	Text = "TROCAR NOME exp.",
+	Func = function()
 		local h = hum()
 		if h and BHName ~= "" then
 			h.DisplayName = BHName
@@ -1554,32 +1872,37 @@ TabP:CreateButton({
 	end,
 })
 
-local infoL = TabP:CreateLabel("Info: ...")
+local infoL = BoxP:AddLabel("Info: ...", true)
+
 task.spawn(function()
 	while true do
 		task.wait(3)
 		pcall(function()
 			local ping = math.floor(game:GetService("Stats").PerformanceStats.Ping:GetValue())
-			infoL:Set("Ping: " .. ping .. " | Players: " .. #game:GetService("Players"):GetPlayers())
+			infoL:SetText("Ping: " .. ping .. " | Players: " .. #game:GetService("Players"):GetPlayers())
 		end)
 	end
 end)
 
-TabP:CreateButton({
-	Name = "TROCAR servidor",
-	Callback = function()
+BoxP:AddButton({
+	Text = "TROCAR servidor",
+	Func = function()
 		game:GetService("TeleportService"):Teleport(game.PlaceId)
 	end,
 })
 
-TabP:CreateButton({
-	Name = "TP HELICOPTERO",
-	Callback = function()
+BoxP:AddButton({
+	Text = "TP HELICOPTERO",
+	Func = function()
 		local me = hrp()
-		if not me then return end
+		if not me then
+			return
+		end
 		for _, m in ipairs(workspace:GetChildren()) do
 			if m:IsA("Model") and string.find(string.lower(m.Name), "heli") then
-				local ok, cf = pcall(function() return m:GetPivot() end)
+				local ok, cf = pcall(function()
+					return m:GetPivot()
+				end)
 				if ok then
 					me.CFrame = cf * CFrame.new(0, 5, 0)
 					break
@@ -1589,10 +1912,12 @@ TabP:CreateButton({
 	end,
 })
 
-TabP:CreateToggle({
-	Name = "Anti-AFK",
-	CurrentValue = false,
-	Callback = function(v) S.AntiAFK = v end,
+BoxP:AddToggle("AntiAFKToggle", {
+	Text = "Anti-AFK",
+	Default = false,
+	Callback = function(v)
+		S.AntiAFK = v
+	end,
 })
 
 task.spawn(function()
@@ -1607,28 +1932,37 @@ task.spawn(function()
 	end
 end)
 
--- ============ ESP ============
-local TabE = Window:CreateTab("ESP", 0)
+local TabE = Window:AddTab("ESP", "eye")
+local BoxE = TabE:AddLeftGroupbox("ESP")
 local ESPOn = false
 local boxes = {}
 
-TabE:CreateToggle({
-	Name = "ESP jogadores",
-	CurrentValue = false,
-	Callback = function(v) ESPOn = v end,
+BoxE:AddToggle("ESPToggle", {
+	Text = "ESP jogadores",
+	Default = false,
+	Callback = function(v)
+		ESPOn = v
+	end,
 })
 
-TabE:CreateToggle({
-	Name = "WALLHACK (contorno)",
-	CurrentValue = false,
-	Callback = function(v) S.Wallhack = v end,
+BoxE:AddToggle("WallhackToggle", {
+	Text = "WALLHACK contorno",
+	Default = false,
+	Callback = function(v)
+		S.Wallhack = v
+	end,
 })
 
 local hls = {}
+
 task.spawn(function()
 	while true do
 		task.wait(2)
-		for _, h in pairs(hls) do pcall(function() h:Destroy() end) end
+		for _, h in pairs(hls) do
+			pcall(function()
+				h:Destroy()
+			end)
+		end
 		hls = {}
 		if S.Wallhack then
 			pcall(function()
@@ -1651,12 +1985,18 @@ end)
 
 RunService.RenderStepped:Connect(function()
 	local cam = workspace.CurrentCamera
-	if not cam then return end
-	for _, b in pairs(boxes) do b:Remove() end
+	if not cam then
+		return
+	end
+	for _, b in pairs(boxes) do
+		b:Remove()
+	end
 	boxes = {}
 	if ESPOn then
 		local mePos = nil
-		pcall(function() mePos = hrp().Position end)
+		pcall(function()
+			mePos = hrp().Position
+		end)
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if plr ~= LocalPlayer and plr.Character then
 				local e = plr.Character:FindFirstChild("HumanoidRootPart")
