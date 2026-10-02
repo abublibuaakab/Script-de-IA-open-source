@@ -1,0 +1,1684 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "Brookhaven Hub",
+	LoadingTitle = "Brookhaven Hub",
+	LoadingSubtitle = "troll & diversao",
+	ConfigurationSaving = { Enabled = false },
+	KeySystem = false,
+})
+
+local G = getgenv()
+G.BHHub = G.BHHub or { Speed = 16, Noclip = false, Fly = false, FlySpeed = 50, InfJump = false, ESP = false, Fling = false, FlingAll = false, Spam = false, SpamText = "oi", AntiAFK = false, CarFly = false, Turbo = false, TurboSpeed = 200, CarFling = false, MusicID = "", BoatFling = false, BallFling = false, SofaName = "" }
+local S = G.BHHub
+
+local function findModels(keys, maxN)
+	local found = {}
+	for _, d in ipairs(workspace:GetDescendants()) do
+		if d:IsA("Model") then
+			local n = string.lower(d.Name)
+			for _, k in ipairs(keys) do
+				if string.find(n, k, 1, true) then
+					table.insert(found, d)
+					break
+				end
+			end
+			if #found >= (maxN or 5) then break end
+		end
+	end
+	return found
+end
+
+local function modelPos(m)
+	local ok, cf = pcall(function() return m:GetPivot() end)
+	if ok then return cf.Position end
+	return nil
+end
+
+local function spinModel(m)
+	local root = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart", true)
+	if not root then return end
+	local av = root:FindFirstChild("BHSpin")
+	if not av then
+		av = Instance.new("BodyAngularVelocity")
+		av.Name = "BHSpin"
+		av.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+		av.AngularVelocity = Vector3.new(9e9, 0, 9e9)
+		av.Parent = root
+	end
+end
+
+local function myVehicle()
+	local h = hum()
+	local seat = h and h.SeatPart
+	return seat and seat:FindFirstAncestorOfClass("Model") or nil
+end
+
+local RE = game:GetService("ReplicatedStorage").RE
+local Maxy = RE:WaitForChild("1Max1y")
+local RPHouse = RE:WaitForChild("1RPHous1eEven1t")
+
+local function char()
+	local c = LocalPlayer.Character
+	if c and c.Parent then return c end
+	return nil
+end
+
+local function hrp()
+	local c = char()
+	return c and c:FindFirstChild("HumanoidRootPart") or nil
+end
+
+local function hum()
+	local c = char()
+	return c and c:FindFirstChildOfClass("Humanoid") or nil
+end
+
+local function notify(t, c)
+	Rayfield:Notify({ Title = t, Content = c, Duration = 4 })
+end
+
+local function playerByName(n)
+	n = string.lower(n)
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if string.find(string.lower(plr.Name), n, 1, true) or string.find(string.lower(plr.DisplayName), n, 1, true) then
+			return plr
+		end
+	end
+	return nil
+end
+
+-- ============ CARRO ============
+local TabC = Window:CreateTab("Carro", 0)
+local CarName = "Limo"
+
+TabC:CreateInput({
+	Name = "Nome do carro",
+	PlaceholderText = "ve o nome na concessionaria",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) CarName = t end,
+})
+
+TabC:CreateButton({
+	Name = "SPAWNAR carro",
+	Callback = function()
+		pcall(function()
+			Maxy:FireServer("RequestDealerVehicle", CarName)
+			notify("Carro", "Pedido: " .. CarName .. " (espera 9s)")
+		end)
+	end,
+})
+
+TabC:CreateToggle({
+	Name = "VOAR com carro (dirigindo)",
+	CurrentValue = false,
+	Callback = function(v) S.CarFly = v end,
+})
+
+TabC:CreateSlider({
+	Name = "Velocidade MAX do carro",
+	Range = { 55, 300 },
+	Increment = 5,
+	CurrentValue = 200,
+	Callback = function(v) S.TurboSpeed = v end,
+})
+
+TabC:CreateToggle({
+	Name = "TURBO carro (MaxSpeed)",
+	CurrentValue = false,
+	Callback = function(v) S.Turbo = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if S.Turbo then
+			pcall(function()
+				local h = hum()
+				local seat = h and h.SeatPart
+				if seat and seat:IsA("VehicleSeat") then
+					if seat.MaxSpeed ~= S.TurboSpeed then
+						seat.MaxSpeed = S.TurboSpeed
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabC:CreateToggle({
+	Name = "FLING com veiculo (dirigindo)",
+	CurrentValue = false,
+	Callback = function(v) S.CarFling = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if S.CarFling then
+			pcall(function()
+				local h = hum()
+				local seat = h and h.SeatPart
+				local model = seat and seat:FindFirstAncestorOfClass("Model")
+				local root = model and (model.PrimaryPart or seat)
+				if root then
+					local av = root:FindFirstChild("BHSpin")
+					if not av then
+						av = Instance.new("BodyAngularVelocity")
+						av.Name = "BHSpin"
+						av.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+						av.AngularVelocity = Vector3.new(9e9, 0, 9e9)
+						av.Parent = root
+					end
+				end
+			end)
+		else
+			pcall(function()
+				local h = hum()
+				local seat = h and h.SeatPart
+				local model = seat and seat:FindFirstAncestorOfClass("Model")
+				local root = model and (model.PrimaryPart or seat)
+				local av = root and root:FindFirstChild("BHSpin")
+				if av then av:Destroy() end
+			end)
+		end
+	end
+end)
+
+TabC:CreateToggle({
+	Name = "CAR SMASH (meu carro nos players)",
+	CurrentValue = false,
+	Callback = function(v) S.CarSmash = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.CarSmash then
+			pcall(function()
+				local h = hum()
+				local seat = h and h.SeatPart
+				local model = seat and seat:FindFirstAncestorOfClass("Model")
+				if not model then return end
+				for _, plr in ipairs(Players:GetPlayers()) do
+					if not S.CarSmash then break end
+					if plr ~= LocalPlayer and plr.Character then
+						local e = plr.Character:FindFirstChild("HumanoidRootPart")
+						if e then
+							model:PivotTo(e.CFrame * CFrame.new(0, 3, 0))
+							task.wait(1)
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabC:CreateButton({
+	Name = "FREIO (anchor carro)",
+	Callback = function()
+		pcall(function()
+			local h = hum()
+			local seat = h and h.SeatPart
+			local model = seat and seat:FindFirstAncestorOfClass("Model")
+			local root = model and (model.PrimaryPart or seat)
+			if root then
+				root.Anchored = not root.Anchored
+				notify("Carro", root.Anchored and "Freado." or "Solto.")
+			end
+		end)
+	end,
+})
+
+TabC:CreateToggle({
+	Name = "RGB no carro (arco-iris)",
+	CurrentValue = false,
+	Callback = function(v) S.RGBCar = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.3)
+		if S.RGBCar then
+			pcall(function()
+				local h = hum()
+				local seat = h and h.SeatPart
+				local model = seat and seat:FindFirstAncestorOfClass("Model")
+				if model then
+					local c = Color3.fromHSV((tick() % 5) / 5, 1, 1)
+					for _, p in ipairs(model:GetDescendants()) do
+						if p:IsA("BasePart") and p.Name == "Body" then
+							p.Color = c
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
+
+local ToolName = "GlockBrown"
+TabC:CreateInput({
+	Name = "Pegar TOOL (nome)",
+	PlaceholderText = "GlockBrown, PropMaker...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) ToolName = t end,
+})
+
+TabC:CreateButton({
+	Name = "PEGAR TOOL (exp.)",
+	Callback = function()
+		pcall(function()
+			local r = RE["1Too1l"]:InvokeServer(ToolName)
+			notify("Tool", "Retorno: " .. tostring(r) .. " (pode entregar na loja)")
+		end)
+	end,
+})
+
+TabC:CreateButton({
+	Name = "MUSICA no carro (usa ID da aba Musica)",
+	Callback = function()
+		local n = tonumber(S.MusicID)
+		if not n then notify("Musica", "Digite o ID primeiro.") return end
+		pcall(function()
+			game:GetService("ReplicatedStorage").Remotes.ToggleVehicleMusic:FireServer(n)
+		end)
+		task.wait(0.3)
+		pcall(function()
+			game:GetService("ReplicatedStorage").Remotes.ToggleVehicleMusic:FireServer("Play", n)
+		end)
+		notify("Musica", "Tentativa no carro.")
+	end,
+})
+
+TabC:CreateButton({
+	Name = "TP meu carro ate mim",
+	Callback = function()
+		pcall(function()
+			local h = hum()
+			local seat = h and h.SeatPart
+			local model = seat and seat:FindFirstAncestorOfClass("Model")
+			local me = hrp()
+			if model and me then
+				model:PivotTo(me.CFrame * CFrame.new(0, 0, -6))
+			else
+				notify("Carro", "Sente no carro primeiro.")
+			end
+		end)
+	end,
+})
+
+RunService.RenderStepped:Connect(function()
+	if S.CarFly then
+		local h = hum()
+		local me = hrp()
+		if h and me and h.SeatPart then
+			local model = h.SeatPart:FindFirstAncestorOfClass("Model")
+			if model then
+				local dir = h.MoveDirection
+				local up = 0
+				if h.Jump then up = 1 end
+				local cf = model:GetPivot()
+				model:PivotTo(cf + dir * 2 + Vector3.new(0, up * 2, 0))
+			end
+		end
+	end
+end)
+
+-- ============ MUSICA ============
+local TabM = Window:CreateTab("Musica", 0)
+
+TabM:CreateInput({
+	Name = "ID da musica",
+	PlaceholderText = "ex: 1837879082",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) S.MusicID = t end,
+})
+
+local function tryMusic(id)
+	local M = game:GetService("ReplicatedStorage").Remotes.ClientMusic
+	local n = tonumber(id)
+	if not n then return "ID invalido" end
+	pcall(function() M:FireServer(n) end)
+	task.wait(0.5)
+	pcall(function() M:FireServer("Play", n) end)
+	task.wait(0.5)
+	pcall(function() M:FireServer("rbxassetid://" .. n) end)
+	task.wait(0.5)
+	local h = hum()
+	local seat = h and h.SeatPart
+	if seat then
+		pcall(function()
+			game:GetService("ReplicatedStorage").Remotes.ToggleVehicleMusic:FireServer(n)
+		end)
+	end
+	return "tentativas enviadas"
+end
+
+TabM:CreateButton({
+	Name = "TOCAR na caixa de som",
+	Callback = function()
+		notify("Musica", tryMusic(S.MusicID))
+	end,
+})
+
+TabM:CreateLabel("Se nao tocar, me fala: testo outro remote.")
+
+-- ============ CASA ============
+local TabH = Window:CreateTab("Casa", 0)
+local BanName = ""
+
+TabH:CreateInput({
+	Name = "Nome do player",
+	PlaceholderText = "nome ou parte do nome",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) BanName = t end,
+})
+
+TabH:CreateButton({
+	Name = "BANIR da minha casa (exp.)",
+	Callback = function()
+		local t = playerByName(BanName)
+		if t then
+			pcall(function() RPHouse:FireServer("BanPlayer", t.Name) end)
+			notify("Casa", "Tentando banir " .. t.Name)
+		else
+			notify("Casa", "Player nao achado.")
+		end
+	end,
+})
+
+TabH:CreateButton({
+	Name = "BANIR TODOS da casa",
+	Callback = function()
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer then
+				pcall(function() RPHouse:FireServer("BanPlayer", plr.Name) end)
+				task.wait(0.2)
+			end
+		end
+		notify("Casa", "Todos banidos (tentativa).")
+	end,
+})
+
+TabH:CreateButton({
+	Name = "DESBANIR (exp.)",
+	Callback = function()
+		local t = playerByName(BanName)
+		if t then
+			pcall(function() RPHouse:FireServer("UnbanPlayer", t.Name) end)
+			notify("Casa", "Tentando desbanir " .. t.Name)
+		else
+			notify("Casa", "Player nao achado.")
+		end
+	end,
+})
+
+TabH:CreateButton({
+	Name = "TRANCAR/DESTRANCAR casa",
+	Callback = function()
+		pcall(function()
+			RE["1Player1sHous1e"]:FireServer("LockDoors")
+			notify("Casa", "Portas alternadas.")
+		end)
+	end,
+})
+
+TabH:CreateButton({
+	Name = "TP MINHA CASA",
+	Callback = function()
+		local me = hrp()
+		if not me then return end
+		local lots = workspace:FindFirstChild("001_Lots")
+		local target = lots and lots:FindFirstChild(LocalPlayer.Name .. "House")
+		if target then
+			local ok, cf = pcall(function() return target:GetPivot() end)
+			if ok then me.CFrame = cf * CFrame.new(0, 5, 0) end
+		else
+			notify("Casa", "Voce nao tem casa.")
+		end
+	end,
+})
+
+TabH:CreateToggle({
+	Name = "AUTO LOOT cofre (casas)",
+	CurrentValue = false,
+	Callback = function(v) S.LootSafe = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.LootSafe then
+			pcall(function()
+				if not G.BHHub.safeCache then
+					G.BHHub.safeCache = {}
+					for _, d in ipairs(workspace:GetDescendants()) do
+						if d.Name == "OpenSafeDoorButton" and d:IsA("BasePart") then
+							table.insert(G.BHHub.safeCache, d)
+						end
+					end
+				end
+				local me = hrp()
+				if not me then return end
+				for _, d in ipairs(G.BHHub.safeCache) do
+					if not S.LootSafe then break end
+					if d and d.Parent then
+						me.CFrame = d.CFrame * CFrame.new(0, 0, 3)
+						task.wait(0.5)
+						for _, k in ipairs(d.Parent:GetDescendants()) do
+							if k:IsA("ClickDetector") then pcall(function() fireclickdetector(k) end) end
+						end
+						task.wait(1)
+						local m = d:FindFirstAncestorOfClass("Model")
+						if m then
+							local ok, cf = pcall(function() return m:GetPivot() end)
+							if ok then me.CFrame = cf end
+							task.wait(1)
+						end
+					end
+				end
+			end)
+		else
+			G.BHHub.safeCache = nil
+		end
+	end
+end)
+
+TabH:CreateLabel("Cor da casa (precisa ter casa):")
+local CR, CG, CB = 255, 0, 0
+TabH:CreateSlider({ Name = "R", Range = { 0, 255 }, Increment = 1, CurrentValue = 255, Callback = function(v) CR = v end })
+TabH:CreateSlider({ Name = "G", Range = { 0, 255 }, Increment = 1, CurrentValue = 0, Callback = function(v) CG = v end })
+TabH:CreateSlider({ Name = "B", Range = { 0, 255 }, Increment = 1, CurrentValue = 0, Callback = function(v) CB = v end })
+TabH:CreateButton({
+	Name = "PINTAR casa",
+	Callback = function()
+		pcall(function()
+			RE["1Player1sHous1e"]:FireServer("ColorPickHouse", Color3.fromRGB(CR, CG, CB))
+			notify("Casa", "Cor enviada.")
+		end)
+	end,
+})
+
+-- ============ TROLL ============
+local TabT = Window:CreateTab("Troll", 0)
+
+TabT:CreateToggle({
+	Name = "FLING (gira e joga longe)",
+	CurrentValue = false,
+	Callback = function(v) S.Fling = v end,
+})
+
+local flingAV = nil
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if S.Fling then
+			local me = hrp()
+			if me and not flingAV then
+				flingAV = Instance.new("BodyAngularVelocity")
+				flingAV.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+				flingAV.AngularVelocity = Vector3.new(9e9, 9e9, 9e9)
+				flingAV.Parent = me
+			end
+		else
+			if flingAV then
+				pcall(function() flingAV:Destroy() end)
+				flingAV = nil
+			end
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "FLING EM TODOS (passa um por um)",
+	CurrentValue = false,
+	Callback = function(v) S.FlingAll = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if S.FlingAll then
+			for _, plr in ipairs(Players:GetPlayers()) do
+				if not S.FlingAll then break end
+				if plr ~= LocalPlayer and plr.Character then
+					local e = plr.Character:FindFirstChild("HumanoidRootPart")
+					local me = hrp()
+					if e and me then
+						pcall(function()
+							me.CFrame = e.CFrame * CFrame.new(0, 0, 1)
+						end)
+						task.wait(1)
+					end
+				end
+			end
+		end
+	end
+end)
+
+TabT:CreateInput({
+	Name = "Texto do spam",
+	PlaceholderText = "mensagem...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) S.SpamText = t end,
+})
+
+TabT:CreateToggle({
+	Name = "SPAM no chat",
+	CurrentValue = false,
+	Callback = function(v) S.Spam = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+		if S.Spam and S.SpamText ~= "" then
+			pcall(function()
+				game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(S.SpamText, "All")
+			end)
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "FLING BARCO (persegue e gira)",
+	CurrentValue = false,
+	Callback = function(v) S.BoatFling = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.7)
+		if S.BoatFling then
+			pcall(function()
+				local v = myVehicle()
+				if not v then return end
+				spinModel(v)
+				for _, plr in ipairs(Players:GetPlayers()) do
+					if not S.BoatFling then break end
+					if plr ~= LocalPlayer and plr.Character then
+						local e = plr.Character:FindFirstChild("HumanoidRootPart")
+						if e then
+							v:PivotTo(e.CFrame * CFrame.new(0, 2, 0))
+							task.wait(1)
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "FLING BALL (bola girando)",
+	CurrentValue = false,
+	Callback = function(v) S.BallFling = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.BallFling then
+			pcall(function()
+				local balls = findModels({ "ball", "soccer", "football", "basket" }, 3)
+				if #balls == 0 then return end
+				local b = balls[1]
+				spinModel(b)
+				local me = hrp()
+				local bp = modelPos(b)
+				if me and bp and (bp - me.Position).Magnitude > 8 then
+					b:PivotTo(me.CFrame * CFrame.new(0, 0, -3))
+					task.wait(0.5)
+				end
+				local best, bestD = nil, 60
+				for _, plr in ipairs(Players:GetPlayers()) do
+					if plr ~= LocalPlayer and plr.Character then
+						local ee = plr.Character:FindFirstChild("HumanoidRootPart")
+						local mp = modelPos(b)
+						if ee and mp then
+							local d = (ee.Position - mp).Magnitude
+							if d < bestD then best, bestD = ee, d end
+						end
+					end
+				end
+				if best then
+					b:PivotTo(best.CFrame * CFrame.new(0, 5, 0))
+				end
+			end)
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "BRING PLAYER via sofa (loop)",
+	CurrentValue = false,
+	Callback = function(v) S.SofaBring = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.7)
+		if S.SofaBring then
+			pcall(function()
+				local me = hrp()
+				if not me then return end
+				local sofas = findModels({ "sofa", "couch" }, 3)
+				if #sofas == 0 then return end
+				local s = sofas[1]
+				local t = playerByName(S.SofaName)
+				if t and t.Character then
+					local e = t.Character:FindFirstChild("HumanoidRootPart")
+					if e then
+						local sitter = nil
+						for _, k in ipairs(s:GetDescendants()) do
+							if k:IsA("Seat") or k:IsA("VehicleSeat") then
+								local occ = k.Occupant
+								if occ and occ.Parent == t.Character then
+									sitter = true
+									break
+								end
+							end
+						end
+						if sitter then
+							s:PivotTo(me.CFrame * CFrame.new(0, 0, -4))
+							notify("Bring", t.Name .. " puxado!")
+							task.wait(2)
+						else
+							s:PivotTo(e.CFrame * CFrame.new(0, 0, 0))
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "FLING BARCO sozinho (pega e caca)",
+	CurrentValue = false,
+	Callback = function(v) S.BoatSolo = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(0.7)
+		if S.BoatSolo then
+			pcall(function()
+				local me = hrp()
+				if not me then return end
+				local boats = findModels({ "boat", "yacht", "ship", "canoe", "jetski", "sail" }, 5)
+				if #boats == 0 then return end
+				local b = boats[1]
+				local bp = modelPos(b)
+				if bp and (bp - me.Position).Magnitude > 10 then
+					b:PivotTo(me.CFrame * CFrame.new(0, 0, -4))
+					task.wait(0.5)
+				end
+				spinModel(b)
+				for _, plr in ipairs(Players:GetPlayers()) do
+					if not S.BoatSolo then break end
+					if plr ~= LocalPlayer and plr.Character then
+						local e = plr.Character:FindFirstChild("HumanoidRootPart")
+						if e then
+							b:PivotTo(e.CFrame * CFrame.new(0, 2, 0))
+							task.wait(1)
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabT:CreateInput({
+	Name = "Alvo do sofa (nome)",
+	PlaceholderText = "nome do player...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) S.SofaName = t end,
+})
+
+TabT:CreateButton({
+	Name = "BRING SOFA (sofa no alvo)",
+	Callback = function()
+		pcall(function()
+			local sofas = findModels({ "sofa", "couch" }, 3)
+			if #sofas == 0 then notify("Sofa", "Nenhum sofa achado.") return end
+			local s = sofas[1]
+			local t = playerByName(S.SofaName)
+			if t and t.Character then
+				local e = t.Character:FindFirstChild("HumanoidRootPart")
+				if e then
+					s:PivotTo(e.CFrame * CFrame.new(0, 0, 0))
+					notify("Sofa", "Sofa no " .. t.Name .. " (senta e puxa!)")
+				end
+			else
+				notify("Sofa", "Player nao achado.")
+			end
+		end)
+	end,
+})
+
+TabT:CreateButton({
+	Name = "PUXAR (sofa ate mim)",
+	Callback = function()
+		pcall(function()
+			local sofas = findModels({ "sofa", "couch" }, 3)
+			local me = hrp()
+			if #sofas > 0 and me then
+				sofas[1]:PivotTo(me.CFrame * CFrame.new(0, 0, -3))
+				notify("Sofa", "Puxado (quem sentou vem junto).")
+			else
+				notify("Sofa", "Nada achado.")
+			end
+		end)
+	end,
+})
+
+TabT:CreateToggle({
+	Name = "FARM ATM (banco, loop)",
+	CurrentValue = false,
+	Callback = function(v) S.ATMFarm = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.ATMFarm then
+			pcall(function()
+				local me = hrp()
+				if not me then return end
+				G.BHHub.atmIdx = (G.BHHub.atmIdx or 0) + 1
+				local spots = { Vector3.new(-16, 4, 255), Vector3.new(-16, 4, 248) }
+				local s = spots[(G.BHHub.atmIdx % #spots) + 1]
+				me.CFrame = CFrame.new(s)
+				task.wait(2)
+			end)
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "AUTO ROUBAR cofre (click loop)",
+	CurrentValue = false,
+	Callback = function(v) S.RobBank = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.RobBank then
+			pcall(function()
+				local me = hrp()
+				if not me then return end
+				local bank = workspace:FindFirstChild("Bank")
+				local elev = bank and bank:FindFirstChild("001_ElevatorBank")
+				local mv = elev and elev:FindFirstChild("MediumVault")
+				if mv then
+					for _, k in ipairs(mv:GetDescendants()) do
+						if not S.RobBank then break end
+						if k:IsA("ClickDetector") then
+							local part = k.Parent
+							if part and part:IsA("BasePart") then
+								me.CFrame = part.CFrame * CFrame.new(0, 0, 3)
+								task.wait(0.4)
+								pcall(function() fireclickdetector(k) end)
+								task.wait(0.8)
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabT:CreateToggle({
+	Name = "ABRIR TUDO (banco loop)",
+	CurrentValue = false,
+	Callback = function(v) S.OpenAll = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(3)
+		if S.OpenAll then
+			pcall(function()
+				local bank = workspace:FindFirstChild("Bank")
+				if not bank then return end
+				for _, k in ipairs(bank:GetDescendants()) do
+					if not S.OpenAll then break end
+					if k:IsA("ClickDetector") or k:IsA("ProximityPrompt") then
+						pcall(function()
+							if k:IsA("ClickDetector") then fireclickdetector(k)
+							else fireproximityprompt(k, 0) end
+						end)
+						task.wait(0.3)
+					end
+				end
+			end)
+		end
+	end
+end)
+
+TabT:CreateButton({
+	Name = "ROTINA RICO (ATM+cofre)",
+	Callback = function()
+		S.ATMFarm = true
+		S.RobBank = true
+		S.OpenAll = true
+		notify("Rico", "Farm ligado: ATM + cofre + portas.")
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP cofre MEDIO",
+	Callback = function()
+		local me = hrp()
+		local mv = workspace.Bank["001_ElevatorBank"]:FindFirstChild("MediumVault")
+		if me and mv then
+			local ok, cf = pcall(function() return mv:GetPivot() end)
+			if ok then me.CFrame = cf * CFrame.new(0, 3, 6) end
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP cofre DIAMANTE",
+	Callback = function()
+		local me = hrp()
+		local dv = workspace.Bank:FindFirstChild("DiamondVault")
+		if me and dv then
+			local ok, cf = pcall(function() return dv:GetPivot() end)
+			if ok then me.CFrame = cf * CFrame.new(0, 3, 6) end
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "VOTE KICK alguem (exp.)",
+	Callback = function()
+		local nm = (BanName ~= "" and BanName or TpName)
+		if nm == "" then notify("Vote", "Digite o nome primeiro.") return end
+		local t = playerByName(nm)
+		if t then
+			pcall(function()
+				RE["1Playe1rTrigge1rEven1t"]:FindFirstChild("VoteKickRemote")
+			end)
+			for _, d in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+				if d.Name == "VoteKickRemote" and d:IsA("RemoteEvent") then
+					pcall(function() d:FireServer(t) end)
+					task.wait(0.2)
+					pcall(function() d:FireServer(t.Name) end)
+				end
+			end
+			notify("Vote", "Votos enviados p/ " .. t.Name)
+		else
+			notify("Vote", "Digite o nome no campo Casa/TP.")
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "ANUNCIO FALSO (exp.)",
+	Callback = function()
+		pcall(function() RE["1Message1s"]:FireServer(S.SpamText) end)
+		task.wait(0.3)
+		pcall(function() RE["1Message1s"]:FireServer("System", S.SpamText) end)
+		notify("Anuncio", "Tentativa enviada.")
+	end,
+})
+
+TabT:CreateButton({
+	Name = "ROLETA (TP aleatorio)",
+	Callback = function()
+		local ps = game:GetService("Players"):GetPlayers()
+		local others = {}
+		for _, p in ipairs(ps) do
+			if p ~= LocalPlayer and p.Character then table.insert(others, p) end
+		end
+		local me = hrp()
+		if #others > 0 and me then
+			local t = others[math.random(1, #others)]
+			local e = t.Character:FindFirstChild("HumanoidRootPart")
+			if e then me.CFrame = e.CFrame * CFrame.new(0, 0, 4) end
+			notify("Roleta", t.DisplayName)
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "SPAM REACAO (coracao)",
+	Callback = function()
+		for _, d in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+			if d.Name == "SpectatorReactionRemote" and d:IsA("RemoteEvent") then
+				for i = 1, 5 do
+					pcall(function() d:FireServer("Heart") end)
+					task.wait(0.2)
+				end
+			end
+		end
+		notify("Reacao", "Hearts enviados.")
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP BANCO",
+	Callback = function()
+		local me = hrp()
+		if me then me.CFrame = CFrame.new(-16, 5, 250) end
+	end,
+})
+
+TabT:CreateToggle({
+	Name = "RAGDOLL SPAM (loop)",
+	CurrentValue = false,
+	Callback = function(v) S.RagSpam = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.RagSpam then
+			local h = hum()
+			if h then pcall(function() h:ChangeState(Enum.HumanoidStateType.Ragdoll) end) end
+		end
+	end
+end)
+
+TabT:CreateButton({
+	Name = "BOMBA (exp. Santa?)",
+	Callback = function()
+		pcall(function()
+			RE["1Blo1wBomb1sServe1r"]:FireServer()
+			notify("Bomba", "Tentativa enviada.")
+		end)
+	end,
+})
+
+TabT:CreateButton({
+	Name = "Salvar posicao",
+	Callback = function()
+		local me = hrp()
+		if me then
+			G.BHHub.savedPos = me.CFrame
+			notify("Pos", "Salva.")
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "Voltar salvo",
+	Callback = function()
+		local me = hrp()
+		if me and G.BHHub.savedPos then
+			me.CFrame = G.BHHub.savedPos
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP DELEGACIA",
+	Callback = function()
+		local me = hrp()
+		if me then me.CFrame = CFrame.new(-31, 20, 48) end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP HOSPITAL",
+	Callback = function()
+		local me = hrp()
+		if me then me.CFrame = CFrame.new(-305, 40, 77) end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP ESCOLA",
+	Callback = function()
+		local me = hrp()
+		if me then me.CFrame = CFrame.new(-348, 18, 220) end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "TP PRAIA",
+	Callback = function()
+		local me = hrp()
+		if me then me.CFrame = CFrame.new(-22, 88, -530) end
+	end,
+})
+
+local CloneName = ""
+TabT:CreateInput({
+	Name = "Clonar avatar de",
+	PlaceholderText = "nome...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) CloneName = t end,
+})
+
+TabT:CreateButton({
+	Name = "VIRAR CLONE (exp.)",
+	Callback = function()
+		local t = playerByName(CloneName)
+		local h = hum()
+		if t and h then
+			pcall(function()
+				local desc = Players:GetHumanoidDescriptionFromUserId(t.UserId)
+				h:ApplyDescription(desc)
+				notify("Clone", "Virou " .. t.Name .. " (visual).")
+			end)
+		else
+			notify("Clone", "Player nao achado.")
+		end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "Ragdoll (cair duro)",
+	Callback = function()
+		local h = hum()
+		if h then h:ChangeState(Enum.HumanoidStateType.Ragdoll) end
+	end,
+})
+
+TabT:CreateButton({
+	Name = "Respawn (morrer)",
+	Callback = function()
+		local h = hum()
+		if h then h.Health = 0 end
+	end,
+})
+
+-- ============ JOGADOR ============
+local TabP = Window:CreateTab("Jogador", 0)
+
+TabP:CreateSlider({
+	Name = "Velocidade",
+	Range = { 16, 120 },
+	Increment = 1,
+	CurrentValue = 16,
+	Callback = function(v)
+		S.Speed = v
+		local h = hum()
+		if h then h.WalkSpeed = v end
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "Noclip",
+	CurrentValue = false,
+	Callback = function(v) S.Noclip = v end,
+})
+
+TabP:CreateToggle({
+	Name = "Fly",
+	CurrentValue = false,
+	Callback = function(v) S.Fly = v end,
+})
+
+TabP:CreateSlider({
+	Name = "Forca do pulo",
+	Range = { 50, 300 },
+	Increment = 5,
+	CurrentValue = 50,
+	Callback = function(v)
+		local h = hum()
+		if h then h.JumpPower = v end
+	end,
+})
+
+TabP:CreateSlider({
+	Name = "Gravidade (196 normal)",
+	Range = { 0, 196 },
+	Increment = 4,
+	CurrentValue = 196,
+	Callback = function(v)
+		workspace.Gravity = v
+	end,
+})
+
+TabP:CreateButton({
+	Name = "GIGANTE (5x)",
+	Callback = function()
+		local h = hum()
+		if h then
+			for _, n in ipairs({ "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }) do
+				local x = h:FindFirstChild(n)
+				if not x then x = Instance.new("NumberValue") x.Name = n x.Parent = h end
+				x.Value = 5
+			end
+		end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "ANAO (0.5x)",
+	Callback = function()
+		local h = hum()
+		if h then
+			for _, n in ipairs({ "BodyHeightScale", "BodyWidthScale", "BodyDepthScale", "HeadScale" }) do
+				local x = h:FindFirstChild(n)
+				if not x then x = Instance.new("NumberValue") x.Name = n x.Parent = h end
+				x.Value = 0.5
+			end
+		end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "SEM NOME (exp.)",
+	Callback = function()
+		local h = hum()
+		if h then h.DisplayName = "" end
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "HITBOX EXPANDER",
+	CurrentValue = false,
+	Callback = function(v) S.Hitbox = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+		pcall(function()
+			for _, plr in ipairs(Players:GetPlayers()) do
+				if plr ~= LocalPlayer and plr.Character then
+					local e = plr.Character:FindFirstChild("HumanoidRootPart")
+					if e then
+						if S.Hitbox then
+							e.Size = Vector3.new(6, 6, 6)
+							e.Transparency = 0.5
+							e.CanCollide = false
+						elseif e.Size.X > 2.5 then
+							e.Size = Vector3.new(2, 2, 1)
+							e.Transparency = 0
+						end
+					end
+				end
+			end
+		end)
+	end
+end)
+
+local DanceID = ""
+TabP:CreateInput({
+	Name = "ID da danca/anim",
+	PlaceholderText = "rbxassetid...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) DanceID = t end,
+})
+
+TabP:CreateButton({
+	Name = "LISTAR players",
+	Callback = function()
+		local ns = {}
+		for _, p in ipairs(game:GetService("Players"):GetPlayers()) do
+			if p ~= LocalPlayer then table.insert(ns, p.DisplayName) end
+		end
+		notify("Players (" .. #ns .. ")", table.concat(ns, ", "):sub(1, 200))
+	end,
+})
+
+TabP:CreateButton({
+	Name = "PARAR anims",
+	Callback = function()
+		local h = hum()
+		local an = h and h:FindFirstChildOfClass("Animator")
+		if an then
+			for _, t in ipairs(an:GetPlayingAnimationTracks()) do t:Stop() end
+		end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "DANCAR (toca anim)",
+	Callback = function()
+		local h = hum()
+		if h and DanceID ~= "" then
+			pcall(function()
+				local a = Instance.new("Animation")
+				a.AnimationId = "rbxassetid://" .. tostring(DanceID):match("%d+")
+				local tr = h:FindFirstChildOfClass("Animator"):LoadAnimation(a)
+				tr.Looped = true
+				tr:Play()
+			end)
+		end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "Zoom LONGE (camera)",
+	Callback = function()
+		LocalPlayer.CameraMaxZoomDistance = 1000
+	end,
+})
+
+TabP:CreateButton({
+	Name = "SEM NEBLINA",
+	Callback = function()
+		game:GetService("Lighting").FogEnd = 100000
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "Pulo infinito",
+	CurrentValue = false,
+	Callback = function(v) S.InfJump = v end,
+})
+
+UIS.JumpRequest:Connect(function()
+	if S.InfJump then
+		local h = hum()
+		if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
+	end
+end)
+
+RunService.Stepped:Connect(function()
+	if S.Noclip then
+		local c = char()
+		if c then
+			for _, p in ipairs(c:GetDescendants()) do
+				if p:IsA("BasePart") then p.CanCollide = false end
+			end
+		end
+	end
+	local h = hum()
+	if h and S.Speed > 16 and h.WalkSpeed ~= S.Speed then
+		h.WalkSpeed = S.Speed
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if S.Fly then
+		local me = hrp()
+		local h = hum()
+		if me and h then
+			local dir = h.MoveDirection
+			local up = h.Jump and 1 or 0
+			me.CFrame = me.CFrame + dir * S.FlySpeed * 0.03 + Vector3.new(0, up * S.FlySpeed * 0.03, 0)
+			me.Velocity = Vector3.new(0, 0, 0)
+		end
+	end
+end)
+
+local TpName = ""
+TabP:CreateInput({
+	Name = "TP ate player",
+	PlaceholderText = "nome...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) TpName = t end,
+})
+
+TabP:CreateButton({
+	Name = "Teleportar",
+	Callback = function()
+		local t = playerByName(TpName)
+		local me = hrp()
+		if t and t.Character and me then
+			local e = t.Character:FindFirstChild("HumanoidRootPart")
+			if e then me.CFrame = e.CFrame * CFrame.new(0, 0, 4) end
+		else
+			notify("TP", "Player nao achado.")
+		end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "CABECAO (HeadScale 5)",
+	Callback = function()
+		local c = char()
+		local h = c and c:FindFirstChildOfClass("Humanoid")
+		if h then
+			pcall(function()
+				local v = h:FindFirstChild("HeadScale")
+				if not v then
+					v = Instance.new("NumberValue")
+					v.Name = "HeadScale"
+					v.Parent = h
+				end
+				v.Value = 5
+				notify("Avatar", "Cabecao ativado.")
+			end)
+		end
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "ANTI-VOID (volta se cair)",
+	CurrentValue = false,
+	Callback = function(v) S.AntiVoid = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if S.AntiVoid then
+			local me = hrp()
+			if me and me.Position.Y < -50 then
+				me.CFrame = G.BHHub.spawnCf or (me.CFrame + Vector3.new(0, 100, 0))
+				notify("Void", "Salvo!")
+			end
+		end
+	end
+end)
+
+task.spawn(function()
+	task.wait(5)
+	local me = hrp()
+	if me then G.BHHub.spawnCf = me.CFrame end
+end)
+
+TabP:CreateToggle({
+	Name = "MANTER SPEED (pos-morte)",
+	CurrentValue = false,
+	Callback = function(v) S.KeepSpeed = v end,
+})
+
+LocalPlayer.CharacterAdded:Connect(function(c)
+	task.wait(1)
+	if S.KeepSpeed then
+		local h = c:WaitForChild("Humanoid", 5)
+		if h and S.Speed > 16 then h.WalkSpeed = S.Speed end
+	end
+	G.BHHub.spawnCf = nil
+end)
+
+TabP:CreateButton({
+	Name = "FPS BOOST",
+	Callback = function()
+		pcall(function()
+			local L = game:GetService("Lighting")
+			L.GlobalShadows = false
+			L.FogEnd = 100000
+			for _, d in ipairs(game:GetDescendants()) do
+				if d:IsA("ParticleEmitter") or d:IsA("Trail") then d.Enabled = false end
+			end
+			notify("FPS", "Boost aplicado.")
+		end)
+	end,
+})
+
+TabP:CreateButton({
+	Name = "FULLBRIGHT",
+	Callback = function()
+		local L = game:GetService("Lighting")
+		L.Brightness = 2
+		L.ClockTime = 14
+		L.FogEnd = 100000
+		L.Ambient = Color3.fromRGB(255, 255, 255)
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "ANTI-RAGDOLL (nao cai)",
+	CurrentValue = false,
+	Callback = function(v)
+		S.NoRag = v
+		local h = hum()
+		if h then pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, not v) end)
+	end,
+})
+
+LocalPlayer.CharacterAdded:Connect(function(c)
+	task.wait(1)
+	if S.NoRag then
+		local h = c:WaitForChild("Humanoid", 5)
+		if h then pcall(function() h:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false) end) end
+	end
+end)
+
+TabP:CreateButton({
+	Name = "COPIAR JobId (chamar amigos)",
+	Callback = function()
+		pcall(function() setclipboard(game.JobId) end)
+		notify("Server", game.JobId)
+	end,
+})
+
+TabP:CreateButton({
+	Name = "QUEM TA PERTO (50m)",
+	Callback = function()
+		local me = hrp()
+		local ns = {}
+		if me then
+			for _, plr in ipairs(Players:GetPlayers()) do
+				if plr ~= LocalPlayer and plr.Character then
+					local e = plr.Character:FindFirstChild("HumanoidRootPart")
+					if e and (e.Position - me.Position).Magnitude < 50 then
+						table.insert(ns, plr.DisplayName)
+					end
+				end
+			end
+		end
+		notify("Perto (" .. #ns .. ")", (#ns > 0 and table.concat(ns, ", "):sub(1, 200) or "ninguem"))
+	end,
+})
+
+TabP:CreateButton({
+	Name = "MODO FOTO (some GUI)",
+	Callback = function()
+		G.BHHub.guiOff = not G.BHHub.guiOff
+		for _, g in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
+			if g:IsA("ScreenGui") and g.Name ~= "TouchGui" then
+				g.Enabled = not G.BHHub.guiOff
+			end
+		end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "MUTAR jogo",
+	Callback = function()
+		local s = game:GetService("SoundService")
+		s.Volume = s.Volume > 0 and 0 or 1
+	end,
+})
+
+TabP:CreateButton({
+	Name = "TP SPAWN",
+	Callback = function()
+		local me = hrp()
+		if me and G.BHHub.spawnCf then me.CFrame = G.BHHub.spawnCf end
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "SEGUIR player (grude)",
+	CurrentValue = false,
+	Callback = function(v) S.Follow = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(2)
+		if S.Follow then
+			local t = playerByName(TpName)
+			local me = hrp()
+			if t and t.Character and me then
+				local e = t.Character:FindFirstChild("HumanoidRootPart")
+				if e then me.CFrame = e.CFrame * CFrame.new(0, 0, 4) end
+			end
+		end
+	end
+end)
+
+TabP:CreateButton({
+	Name = "SENTAR",
+	Callback = function()
+		local h = hum()
+		if h then h.Sit = true end
+	end,
+})
+
+TabP:CreateButton({
+	Name = "DESVIRAR carro",
+	Callback = function()
+		local h = hum()
+		local seat = h and h.SeatPart
+		local model = seat and seat:FindFirstAncestorOfClass("Model")
+		if model then
+			local ok, cf = pcall(function() return model:GetPivot() end)
+			if ok then
+				local _, rY, _ = cf:ToEulerAnglesYXZ()
+				model:PivotTo(CFrame.new(cf.Position) * CFrame.Angles(0, rY, 0))
+			end
+		end
+	end,
+})
+
+local BHName = ""
+TabP:CreateInput({
+	Name = "Nome falso (display)",
+	PlaceholderText = "nome...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(t) BHName = t end,
+})
+
+TabP:CreateButton({
+	Name = "TROCAR NOME (exp.)",
+	Callback = function()
+		local h = hum()
+		if h and BHName ~= "" then
+			h.DisplayName = BHName
+			notify("Nome", "Tentativa: " .. BHName)
+		end
+	end,
+})
+
+local infoL = TabP:CreateLabel("Info: ...")
+task.spawn(function()
+	while true do
+		task.wait(3)
+		pcall(function()
+			local ping = math.floor(game:GetService("Stats").PerformanceStats.Ping:GetValue())
+			infoL:Set("Ping: " .. ping .. " | Players: " .. #game:GetService("Players"):GetPlayers())
+		end)
+	end
+end)
+
+TabP:CreateButton({
+	Name = "TROCAR servidor",
+	Callback = function()
+		game:GetService("TeleportService"):Teleport(game.PlaceId)
+	end,
+})
+
+TabP:CreateButton({
+	Name = "TP HELICOPTERO",
+	Callback = function()
+		local me = hrp()
+		if not me then return end
+		for _, m in ipairs(workspace:GetChildren()) do
+			if m:IsA("Model") and string.find(string.lower(m.Name), "heli") then
+				local ok, cf = pcall(function() return m:GetPivot() end)
+				if ok then
+					me.CFrame = cf * CFrame.new(0, 5, 0)
+					break
+				end
+			end
+		end
+	end,
+})
+
+TabP:CreateToggle({
+	Name = "Anti-AFK",
+	CurrentValue = false,
+	Callback = function(v) S.AntiAFK = v end,
+})
+
+task.spawn(function()
+	while true do
+		task.wait(300)
+		if S.AntiAFK then
+			pcall(function()
+				game:GetService("VirtualUser"):CaptureController()
+				game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+			end)
+		end
+	end
+end)
+
+-- ============ ESP ============
+local TabE = Window:CreateTab("ESP", 0)
+local ESPOn = false
+local boxes = {}
+
+TabE:CreateToggle({
+	Name = "ESP jogadores",
+	CurrentValue = false,
+	Callback = function(v) ESPOn = v end,
+})
+
+TabE:CreateToggle({
+	Name = "WALLHACK (contorno)",
+	CurrentValue = false,
+	Callback = function(v) S.Wallhack = v end,
+})
+
+local hls = {}
+task.spawn(function()
+	while true do
+		task.wait(2)
+		for _, h in pairs(hls) do pcall(function() h:Destroy() end) end
+		hls = {}
+		if S.Wallhack then
+			pcall(function()
+				for _, plr in ipairs(Players:GetPlayers()) do
+					if plr ~= LocalPlayer and plr.Character then
+						local hl = Instance.new("Highlight")
+						hl.FillColor = Color3.fromRGB(255, 80, 80)
+						hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+						hl.FillTransparency = 0.5
+						hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+						hl.Adornee = plr.Character
+						hl.Parent = plr.Character
+						table.insert(hls, hl)
+					end
+				end
+			end)
+		end
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	local cam = workspace.CurrentCamera
+	if not cam then return end
+	for _, b in pairs(boxes) do b:Remove() end
+	boxes = {}
+	if ESPOn then
+		local mePos = nil
+		pcall(function() mePos = hrp().Position end)
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= LocalPlayer and plr.Character then
+				local e = plr.Character:FindFirstChild("HumanoidRootPart")
+				if e then
+					local sp, on = cam:WorldToViewportPoint(e.Position)
+					if on then
+						local t = Drawing.new("Text")
+						t.Size = 14
+						t.Center = true
+						t.Outline = true
+						t.Color = Color3.fromRGB(255, 255, 255)
+						t.Position = Vector2.new(sp.X, sp.Y)
+						local d = mePos and (" " .. math.floor((e.Position - mePos).Magnitude) .. "m") or ""
+						t.Text = plr.DisplayName .. d
+						t.Visible = true
+						table.insert(boxes, t)
+					end
+				end
+			end
+		end
+	end
+end)
+
+notify("Brookhaven Hub", "Carregado! Sem hooks, seguro.")
+print("[BHHub] carregado")
